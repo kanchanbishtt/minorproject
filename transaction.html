@@ -41,8 +41,61 @@
         <div class="search-wrap">
           <input id="searchInput" placeholder="Search transactions...">
         </div>
+        <div class="top-actions">
+          <button id="exportCSV" class="btn">Export CSV</button>
+          <button id="exportPDF" class="btn outline">Export PDF</button>
+          <button id="themeToggle" class="icon-btn">🌙</button>
+        </div>
       </header>
 
+      <!-- Summary cards -->
+      <section class="summary">
+        <div class="card card-glass">
+          <small>Total Income</small>
+          <h2 id="totalIncome">₹0</h2>
+        </div>
+        <div class="card card-glass">
+          <small>Total Expense</small>
+          <h2 id="totalExpense">₹0</h2>
+        </div>
+        <div class="card card-glass">
+          <small>Balance</small>
+          <h2 id="balance">₹0</h2>
+        </div>
+      </section>
+
+      <!-- Add Transaction Form -->
+      <div class="panel card-glass" style="margin-top:20px;">
+        <h3>Add New Transaction</h3>
+        <form id="transactionForm" class="form">
+          <input id="description" type="text" placeholder="Description" required />
+          <div class="row">
+            <input id="amount" type="number" placeholder="Amount (₹)" required />
+            <select id="type">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div class="row">
+            <select id="category">
+              <option value="food">Food</option>
+              <option value="rent">Rent</option>
+              <option value="bills">Bills</option>
+              <option value="shopping">Shopping</option>
+              <option value="travel">Travel</option>
+              <option value="other">Other</option>
+            </select>
+            <input id="date" type="date" required />
+          </div>
+
+          <div class="row">
+            <button class="btn primary" type="submit">Add Transaction</button>
+            <button id="clearAll" class="btn outline" type="button">Clear All</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Transaction History -->
       <div class="panel card-glass" style="margin-top:20px;">
         <h2>Transaction History</h2>
 
