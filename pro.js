@@ -26,14 +26,38 @@ const themeToggle = document.getElementById("themeToggle");
 
 /* ---------- Initial Setup ---------- */
 document.addEventListener("DOMContentLoaded", init);
-form.addEventListener("submit", onAddTransaction);
-searchInput.addEventListener("input", renderTransactions);
-filterType.addEventListener("change", renderTransactions);
-filterCategory.addEventListener("change", renderTransactions);
-exportCSVBtn.addEventListener("click", exportCSV);
-exportPDFBtn.addEventListener("click", exportPDF);
-clearAllBtn.addEventListener("click", clearAll);
-themeToggle.addEventListener("click", toggleTheme);
+if (form) form.addEventListener("submit", onAddTransaction);
+if (searchInput) searchInput.addEventListener("input", renderTransactions);
+if (filterType) filterType.addEventListener("change", renderTransactions);
+if (filterCategory) filterCategory.addEventListener("change", renderTransactions);
+if (exportCSVBtn) exportCSVBtn.addEventListener("click", exportCSV);
+if (exportPDFBtn) exportPDFBtn.addEventListener("click", exportPDF);
+if (clearAllBtn) clearAllBtn.addEventListener("click", clearAll);
+if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
+
+/* ---------- Mobile Menu Toggle ---------- */
+const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+const sidebar = document.getElementById("sidebar");
+
+if (mobileMenuToggle) {
+  mobileMenuToggle.addEventListener("click", () => {
+    sidebar.classList.toggle("mobile-open");
+  });
+
+  // Close sidebar when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+      sidebar.classList.remove("mobile-open");
+    }
+  });
+
+  // Close sidebar when menu item is clicked
+  document.querySelectorAll(".menu-item").forEach(item => {
+    item.addEventListener("click", () => {
+      sidebar.classList.remove("mobile-open");
+    });
+  });
+}
 
 /* ---------- Init ---------- */
 function init() {
@@ -48,10 +72,10 @@ function init() {
     save();
   }
 
-  renderTransactions();
-  updateSummary();
-  renderCharts();
-  generateInsight();
+  if (transactionsList) renderTransactions();
+  if (totalIncomeEl) updateSummary();
+  if (document.getElementById("categoryChart")) renderCharts();
+  if (insightText) generateInsight();
 }
 
 /* ---------- CRUD & UI ---------- */
@@ -91,9 +115,11 @@ function clearAll() {
 
 /* ---------- Render Transactions ---------- */
 function renderTransactions() {
-  const q = (searchInput.value || "").toLowerCase();
-  const typeFilter = filterType.value;
-  const catFilter = filterCategory.value;
+  if (!transactionsList) return;
+
+  const q = searchInput ? (searchInput.value || "").toLowerCase() : "";
+  const typeFilter = filterType ? filterType.value : "all";
+  const catFilter = filterCategory ? filterCategory.value : "all";
 
   transactionsList.innerHTML = "";
   const filtered = transactions.filter(tx => {
@@ -147,19 +173,27 @@ function updateSummary() {
   const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance = income - expense;
 
-  totalIncomeEl.textContent = `${currency}${income}`;
-  totalExpenseEl.textContent = `${currency}${expense}`;
-  balanceEl.textContent = `${currency}${balance}`;
+  if (totalIncomeEl) totalIncomeEl.textContent = `${currency}${income}`;
+  if (totalExpenseEl) totalExpenseEl.textContent = `${currency}${expense}`;
+  if (balanceEl) balanceEl.textContent = `${currency}${balance}`;
 
-  const goal = Math.round(income * 0.2);
+  const savedGoal = localStorage.getItem("savingGoal") || 20;
+  const goalPercent = parseFloat(savedGoal) / 100;
+  const goal = Math.round(income * goalPercent);
   const saved = Math.max(0, income - expense);
   const progress = goal === 0 ? 0 : Math.min(100, Math.round((saved / goal) * 100));
-  goalProgressText.textContent = `${progress}% of goal`;
-  goalProgressBar.style.width = `${progress}%`;
+
+  if (goalProgressText) goalProgressText.textContent = `${progress}% of goal`;
+  if (goalProgressBar) goalProgressBar.style.width = `${progress}%`;
 }
 
 /* ---------- Dynamic Charts ---------- */
 function renderCharts() {
+  const pieCanvas = document.getElementById("categoryChart");
+  const barCanvas = document.getElementById("barChart");
+
+  if (!pieCanvas || !barCanvas) return;
+
   // Destroy existing to avoid duplicates
   if (pieChart) pieChart.destroy();
   if (barChart) barChart.destroy();
@@ -170,7 +204,7 @@ function renderCharts() {
     categories[t.category] = (categories[t.category] || 0) + t.amount;
   });
 
-  const pieCtx = document.getElementById("categoryChart").getContext("2d");
+  const pieCtx = pieCanvas.getContext("2d");
   pieChart = new Chart(pieCtx, {
     type: 'doughnut',
     data: {
@@ -194,7 +228,7 @@ function renderCharts() {
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
 
-  const barCtx = document.getElementById("barChart").getContext("2d");
+  const barCtx = barCanvas.getContext("2d");
   barChart = new Chart(barCtx, {
     type: 'bar',
     data: {
@@ -222,6 +256,8 @@ function renderCharts() {
 
 /* ---------- Insights ---------- */
 function generateInsight() {
+  if (!insightText) return;
+
   const expenseTx = transactions.filter(t => t.type === 'expense');
   if (expenseTx.length === 0) {
     insightText.textContent = "Add transactions to get actionable tips.";
@@ -301,36 +337,32 @@ function exportPDF() {
 /* ---------- Theme toggle ---------- */
 function toggleTheme() {
   document.body.classList.toggle("dark-mode");
-  if (document.body.classList.contains("dark-mode")) {
-    document.documentElement.style.setProperty('--bg', '#071014');
-    document.documentElement.style.setProperty('--text', '#e6f7f5');
-  } else {
-    document.documentElement.style.removeProperty('--bg');
-    document.documentElement.style.removeProperty('--text');
+  const isDark = document.body.classList.contains("dark-mode");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+
+  // Update theme icon
+  const themeIcon = document.getElementById("themeToggle");
+  if (themeIcon) {
+    themeIcon.textContent = isDark ? "☀️" : "🌙";
   }
 }
 
-// Sidebar navigation linking to separate pages
+/* ---------- Load Theme on Page Load ---------- */
+function loadTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    const themeIcon = document.getElementById("themeToggle");
+    if (themeIcon) {
+      themeIcon.textContent = "☀️";
+    }
+  }
+}
 
-// Dashboard → pro.html (or home)
-document.querySelector('.menu-item:nth-child(1)').addEventListener('click', () => {
-    window.location.href = 'pro.html';
-});
+// Load theme immediately
+loadTheme();
 
-// Transactions → transaction.html
-document.querySelector('.menu-item:nth-child(2)').addEventListener('click', () => {
-    window.location.href = 'transaction.html';
-});
-
-// Reports → reports.html  (create page later)
-document.querySelector('.menu-item:nth-child(3)').addEventListener('click', () => {
-    window.location.href = 'reports.html';
-});
-
-// Settings → settings.html (create page later)
-document.querySelector('.menu-item:nth-child(4)').addEventListener('click', () => {
-    window.location.href = 'settings.html';
-});
+// Note: Sidebar navigation is handled via <a> tags with href attributes
 
 
 

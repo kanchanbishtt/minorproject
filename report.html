@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -16,54 +17,84 @@
 </script>
 
 <body>
-<div class="app">
+  <div class="app">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo">💰</div>
-      <h1>SmartBudget</h1>
-    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">💰</div>
+        <h1>SmartBudget</h1>
+      </div>
 
-    <nav class="menu">
-     <a href="pro.html" class="menu-item active">Dashboard</a>
-<a href="transaction.html" class="menu-item">Transactions</a>
-<a href="report.html" class="menu-item">Reports</a>
-<a href="settings.html" class="menu-item">Settings</a>
+      <nav class="menu">
+        <a href="pro.html" class="menu-item">Dashboard</a>
+        <a href="transaction.html" class="menu-item">Transactions</a>
+        <a href="report.html" class="menu-item active">Reports</a>
+        <a href="settings.html" class="menu-item">Settings</a>
+      </nav>
 
-    </nav>
+      <div class="sidebar-footer">
+        <small>© 2025 Kanchan</small>
+      </div>
+    </aside>
 
-    <div class="sidebar-footer">
-      <small>© 2025 Kanchan</small>
-    </div>
-  </aside>
+    <!-- Main Area -->
+    <div class="main">
 
-  <!-- Main Area -->
-  <div class="main">
+      <header class="topbar">
+        <h2>Reports & Analytics</h2>
+      </header>
 
-    <header class="topbar">
-      <h2>Reports & Analytics</h2>
-    </header>
-
-    <div class="panel card-glass" style="padding: 20px;">
-      <h3>Overview</h3>
-      <p>This page shows detailed analytics of your income and expenses.</p>
-    </div>
-
-    <section class="analytics">
+      <div class="panel card-glass" style="padding: 20px;">
+        <h3>Overview</h3>
+        <p>This page shows detailed analytics of your income and expenses.</p>
+      </div>
 
       <section class="analytics">
+        <div class="chart-card glass-card">
+          <h3>Category-wise Spending</h3>
+          <canvas id="categoryChart"></canvas>
+        </div>
 
-  <div class="chart-card glass-card">
-    <h3>Category-wise Spending</h3>
-    <canvas id="categoryChart"></canvas>   <!-- SAME ID -->
+        <div class="chart-card glass-card">
+          <h3>Income vs Expense</h3>
+          <canvas id="barChart"></canvas>
+        </div>
+      </section>
+
+    </div>
   </div>
 
-  <div class="chart-card glass-card">
-    <h3>Income vs Expense</h3>
-    <canvas id="barChart"></canvas>        <!-- SAME ID -->
-  </div>
+  <script>
+    /* Load saved theme */
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark-mode");
+    }
 
-</section>
+    /* Mobile Menu Toggle */
+    const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+    const sidebar = document.getElementById("sidebar"); if (mobileMenuToggle) {
+      mobileMenuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("mobile-open");
+      });
 
+      document.addEventListener("click", (e) => {
+        if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+          sidebar.classList.remove("mobile-open");
+        }
+      });
 
+      document.querySelectorAll(".menu-item").forEach(item => {
+        item.addEventListener("click", () => {
+          sidebar.classList.remove("mobile-open");
+        });
+      });
+    }
+  </script>
+
+</body>
+
+</html>

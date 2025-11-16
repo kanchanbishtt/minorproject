@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -9,64 +10,96 @@
   <script src="pro.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-<div class="app">
+  <div class="app">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
 
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo">💰</div>
-      <h1>SmartBudget</h1>
-    </div>
-
-    <nav class="menu">
-      <a href="pro.html" class="menu-item active">Dashboard</a>
-<a href="transaction.html" class="menu-item">Transactions</a>
-<a href="report.html" class="menu-item">Reports</a>
-<a href="settings.html" class="menu-item">Settings</a>
-
-    </nav>
-
-    <div class="sidebar-footer">
-      <small>© 2025 Kanchan</small>
-    </div>
-  </aside>
-
-  <div class="main">
-
-    <header class="topbar">
-      <div class="search-wrap">
-        <input id="searchInput" placeholder="Search transactions...">
-      </div>
-    </header>
-
-    <div class="panel card-glass" style="margin-top:20px;">
-      <h2>Transaction History</h2>
-
-      <div class="filters" style="margin-bottom: 14px;">
-        <select id="filterType">
-          <option value="all">All</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-        </select>
-
-        <select id="filterCategory">
-          <option value="all">All categories</option>
-          <option value="food">Food</option>
-          <option value="rent">Rent</option>
-          <option value="bills">Bills</option>
-          <option value="shopping">Shopping</option>
-          <option value="travel">Travel</option>
-          <option value="other">Other</option>
-        </select>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">💰</div>
+        <h1>SmartBudget</h1>
       </div>
 
-      <ul id="transactions" class="transaction-list"></ul>
-    </div>
+      <nav class="menu">
+        <a href="pro.html" class="menu-item">Dashboard</a>
+        <a href="transaction.html" class="menu-item active">Transactions</a>
+        <a href="report.html" class="menu-item">Reports</a>
+        <a href="settings.html" class="menu-item">Settings</a>
+      </nav>
 
+      <div class="sidebar-footer">
+        <small>© 2025 Kanchan</small>
+      </div>
+    </aside>
+
+    <div class="main">
+
+      <header class="topbar">
+        <div class="search-wrap">
+          <input id="searchInput" placeholder="Search transactions...">
+        </div>
+      </header>
+
+      <div class="panel card-glass" style="margin-top:20px;">
+        <h2>Transaction History</h2>
+
+        <div class="filters" style="margin-bottom: 14px;">
+          <select id="filterType">
+            <option value="all">All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+
+          <select id="filterCategory">
+            <option value="all">All categories</option>
+            <option value="food">Food</option>
+            <option value="rent">Rent</option>
+            <option value="bills">Bills</option>
+            <option value="shopping">Shopping</option>
+            <option value="travel">Travel</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <ul id="transactions" class="transaction-list"></ul>
+      </div>
+
+    </div>
   </div>
-</div>
+
+  <script>
+    /* Load saved theme */
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark-mode");
+    }
+
+    /* Mobile Menu Toggle */
+    const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    if (mobileMenuToggle) {
+      mobileMenuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("mobile-open");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+          sidebar.classList.remove("mobile-open");
+        }
+      });
+
+      document.querySelectorAll(".menu-item").forEach(item => {
+        item.addEventListener("click", () => {
+          sidebar.classList.remove("mobile-open");
+        });
+      });
+    }
+  </script>
 
 </body>
-</html>
 
+</html>

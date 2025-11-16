@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -11,79 +12,124 @@
 
 <body>
 
-<div class="app">
+  <div class="app">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo">💰</div>
-      <h1>SmartBudget</h1>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">💰</div>
+        <h1>SmartBudget</h1>
+      </div>
+
+      <nav class="menu">
+        <a href="pro.html" class="menu-item">Dashboard</a>
+        <a href="transaction.html" class="menu-item">Transactions</a>
+        <a href="report.html" class="menu-item">Reports</a>
+        <a href="settings.html" class="menu-item active">Settings</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <small>© 2025 Kanchan</small>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+
+      <header class="topbar">
+        <h2>Settings</h2>
+      </header>
+
+      <div class="setting-card">
+        <h3>Theme</h3>
+        <label class="switch">
+          <input type="checkbox" id="toggleTheme">
+          <span class="slider"></span>
+        </label>
+        <p>Enable dark mode</p>
+      </div>
+
+      <div class="setting-card">
+        <h3>Saving Goal (%)</h3>
+        <input type="number" id="goalInput" placeholder="Enter goal % example: 20">
+        <button id="saveGoalBtn">Save Goal</button>
+      </div>
+
+      <div class="setting-card danger">
+        <h3>Danger Zone</h3>
+        <button id="resetDataBtn">Reset All Data</button>
+      </div>
+
     </div>
-
-    <nav class="menu">
-      <a href="pro.html" class="menu-item active">Dashboard</a>
-<a href="transaction.html" class="menu-item">Transactions</a>
-<a href="report.html" class="menu-item">Reports</a>
-<a href="settings.html" class="menu-item">Settings</a>
-
-    </nav>
-
-    <div class="sidebar-footer">
-      <small>© 2025 Kanchan</small>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div class="main">
-
-    <header class="topbar">
-      <h2>Settings</h2>
-    </header>
-
-    <div class="setting-card">
-      <h3>Theme</h3>
-      <label class="switch">
-        <input type="checkbox" id="toggleTheme">
-        <span class="slider"></span>
-      </label>
-      <p>Enable dark mode</p>
-    </div>
-
-    <div class="setting-card">
-      <h3>Saving Goal (%)</h3>
-      <input type="number" id="goalInput" placeholder="Enter goal % example: 20">
-      <button id="saveGoalBtn">Save Goal</button>
-    </div>
-
-    <div class="setting-card danger">
-      <h3>Danger Zone</h3>
-      <button id="resetDataBtn">Reset All Data</button>
-    </div>
-
   </div>
-</div>
 
-<script>
-/* -------- Theme Toggle -------- */
-document.getElementById("toggleTheme").addEventListener("change", () => {
-  document.body.classList.toggle("dark-mode");
-});
+  <script>
+    /* Load saved theme */
+    const savedTheme = localStorage.getItem("theme");
+    const toggleThemeCheckbox = document.getElementById("toggleTheme");
 
-/* -------- Save Goal -------- */
-document.getElementById("saveGoalBtn").addEventListener("click", () => {
-  const val = document.getElementById("goalInput").value;
-  localStorage.setItem("savingGoal", val);
-  alert("Goal updated!");
-});
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark-mode");
+      toggleThemeCheckbox.checked = true;
+    }
 
-/* -------- Reset All Data -------- */
-document.getElementById("resetDataBtn").addEventListener("click", () => {
-  if (!confirm("Are you sure? This will delete all transactions.")) return;
-  localStorage.removeItem("transactions");
-  alert("All data reset!");
-});
-</script>
+    /* Load saved goal */
+    const savedGoal = localStorage.getItem("savingGoal");
+    if (savedGoal) {
+      document.getElementById("goalInput").value = savedGoal;
+    }
+
+    /* Mobile Menu Toggle */
+    const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    if (mobileMenuToggle) {
+      mobileMenuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("mobile-open");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+          sidebar.classList.remove("mobile-open");
+        }
+      });
+
+      document.querySelectorAll(".menu-item").forEach(item => {
+        item.addEventListener("click", () => {
+          sidebar.classList.remove("mobile-open");
+        });
+      });
+    }
+
+    /* -------- Theme Toggle -------- */
+    toggleThemeCheckbox.addEventListener("change", () => {
+      document.body.classList.toggle("dark-mode");
+      const isDark = document.body.classList.contains("dark-mode");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+
+    /* -------- Save Goal -------- */
+    document.getElementById("saveGoalBtn").addEventListener("click", () => {
+      const val = document.getElementById("goalInput").value;
+      if (!val || val <= 0 || val > 100) {
+        alert("Please enter a valid percentage between 1 and 100");
+        return;
+      }
+      localStorage.setItem("savingGoal", val);
+      alert("Savings goal updated to " + val + "%!");
+    });
+
+    /* -------- Reset All Data -------- */
+    document.getElementById("resetDataBtn").addEventListener("click", () => {
+      if (!confirm("Are you sure? This will delete all transactions. This action cannot be undone.")) return;
+      localStorage.removeItem("transactions");
+      alert("All data has been reset!");
+      window.location.href = "pro.html";
+    });
+  </script>
 
 </body>
-</html>
 
+</html>

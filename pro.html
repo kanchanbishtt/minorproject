@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Smart Budget Manager </title>
 
-   <!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- jsPDF (for PDF export) -->
@@ -15,9 +16,14 @@
   <link rel="stylesheet" href="pro.css" />
   <script src="pro.js" defer></script>
 </head>
+
 <body>
+  <div class="app">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="logo">💰</div>
         <h1>SmartBudget</h1>
@@ -25,10 +31,9 @@
 
       <nav class="menu">
         <a href="pro.html" class="menu-item active">Dashboard</a>
-<a href="transaction.html" class="menu-item">Transactions</a>
-<a href="report.html" class="menu-item">Reports</a>
-<a href="settings.html" class="menu-item">Settings</a>
-
+        <a href="transaction.html" class="menu-item">Transactions</a>
+        <a href="report.html" class="menu-item">Reports</a>
+        <a href="settings.html" class="menu-item">Settings</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -38,21 +43,6 @@
 
     <!-- Main content -->
     <div class="main">
-      <div class="page" id="dashboardPage">
-</div>
-<div class="page hidden" id="transactionsPage">
-  <h2>Transactions Page</h2>
-</div>
-
-<div class="page hidden" id="reportsPage">
-  <h2>Reports Page</h2>
-</div>
-
-<div class="page hidden" id="settingsPage">
-  <h2>Settings Page</h2>
-</div>
-
-      <!-- Topbar -->
 
       <header class="topbar">
         <div class="search-wrap">
@@ -156,16 +146,16 @@
 
         <!-- Charts -->
         <div class="analytics">
-  <div class="chart-card glass-card">
-    <h3>Category-wise Spending</h3>
-    <canvas id="categoryChart"></canvas>
-  </div>
+          <div class="chart-card glass-card">
+            <h3>Category-wise Spending</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
 
-  <div class="chart-card glass-card">
-    <h3>Income vs Expense</h3>
-    <canvas id="barChart"></canvas>
-  </div>
-</div>
+          <div class="chart-card glass-card">
+            <h3>Income vs Expense</h3>
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
 
       </section>
 
@@ -175,4 +165,5 @@
     </div>
   </div>
 </body>
+
 </html>
