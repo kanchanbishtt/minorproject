@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Transactions</title>
+
+  <link rel="stylesheet" href="pro.css">
+  <script src="pro.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">💰</div>
+      <h1>SmartBudget</h1>
+    </div>
+
+    <nav class="menu">
+      <a href="pro.html" class="menu-item active">Dashboard</a>
+<a href="transaction.html" class="menu-item">Transactions</a>
+<a href="report.html" class="menu-item">Reports</a>
+<a href="settings.html" class="menu-item">Settings</a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <small>© 2025 Kanchan</small>
+    </div>
+  </aside>
+
+  <div class="main">
+
+    <header class="topbar">
+      <div class="search-wrap">
+        <input id="searchInput" placeholder="Search transactions...">
+      </div>
+    </header>
+
+    <div class="panel card-glass" style="margin-top:20px;">
+      <h2>Transaction History</h2>
+
+      <div class="filters" style="margin-bottom: 14px;">
+        <select id="filterType">
+          <option value="all">All</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+
+        <select id="filterCategory">
+          <option value="all">All categories</option>
+          <option value="food">Food</option>
+          <option value="rent">Rent</option>
+          <option value="bills">Bills</option>
+          <option value="shopping">Shopping</option>
+          <option value="travel">Travel</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <ul id="transactions" class="transaction-list"></ul>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
+

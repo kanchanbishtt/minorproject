@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reports</title>
+
+  <link rel="stylesheet" href="pro.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="pro.js" defer></script>
+</head>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    renderCharts();   // use your existing chart function
+  });
+</script>
+
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">💰</div>
+      <h1>SmartBudget</h1>
+    </div>
+
+    <nav class="menu">
+     <a href="pro.html" class="menu-item active">Dashboard</a>
+<a href="transaction.html" class="menu-item">Transactions</a>
+<a href="report.html" class="menu-item">Reports</a>
+<a href="settings.html" class="menu-item">Settings</a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <small>© 2025 Kanchan</small>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main">
+
+    <header class="topbar">
+      <h2>Reports & Analytics</h2>
+    </header>
+
+    <div class="panel card-glass" style="padding: 20px;">
+      <h3>Overview</h3>
+      <p>This page shows detailed analytics of your income and expenses.</p>
+    </div>
+
+    <section class="analytics">
+
+      <section class="analytics">
+
+  <div class="chart-card glass-card">
+    <h3>Category-wise Spending</h3>
+    <canvas id="categoryChart"></canvas>   <!-- SAME ID -->
+  </div>
+
+  <div class="chart-card glass-card">
+    <h3>Income vs Expense</h3>
+    <canvas id="barChart"></canvas>        <!-- SAME ID -->
+  </div>
+
+</section>
+
+

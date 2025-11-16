@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Settings</title>
+
+  <link rel="stylesheet" href="pro.css" />
+  <script src="pro.js" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">💰</div>
+      <h1>SmartBudget</h1>
+    </div>
+
+    <nav class="menu">
+      <a href="pro.html" class="menu-item active">Dashboard</a>
+<a href="transaction.html" class="menu-item">Transactions</a>
+<a href="report.html" class="menu-item">Reports</a>
+<a href="settings.html" class="menu-item">Settings</a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <small>© 2025 Kanchan</small>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+
+    <header class="topbar">
+      <h2>Settings</h2>
+    </header>
+
+    <div class="setting-card">
+      <h3>Theme</h3>
+      <label class="switch">
+        <input type="checkbox" id="toggleTheme">
+        <span class="slider"></span>
+      </label>
+      <p>Enable dark mode</p>
+    </div>
+
+    <div class="setting-card">
+      <h3>Saving Goal (%)</h3>
+      <input type="number" id="goalInput" placeholder="Enter goal % example: 20">
+      <button id="saveGoalBtn">Save Goal</button>
+    </div>
+
+    <div class="setting-card danger">
+      <h3>Danger Zone</h3>
+      <button id="resetDataBtn">Reset All Data</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* -------- Theme Toggle -------- */
+document.getElementById("toggleTheme").addEventListener("change", () => {
+  document.body.classList.toggle("dark-mode");
+});
+
+/* -------- Save Goal -------- */
+document.getElementById("saveGoalBtn").addEventListener("click", () => {
+  const val = document.getElementById("goalInput").value;
+  localStorage.setItem("savingGoal", val);
+  alert("Goal updated!");
+});
+
+/* -------- Reset All Data -------- */
+document.getElementById("resetDataBtn").addEventListener("click", () => {
+  if (!confirm("Are you sure? This will delete all transactions.")) return;
+  localStorage.removeItem("transactions");
+  alert("All data reset!");
+});
+</script>
+
+</body>
+</html>
+

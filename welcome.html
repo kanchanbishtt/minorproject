@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Welcome — Smart Budget Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Poppins, sans-serif;
+    background: #e0f2f1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .welcome-container {
+    width: 95%;
+    max-width: 430px;
+    background: white;
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-top: 6px solid #00897b;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  h2 {
+    text-align: center;
+    color: #004d40;
+    margin-bottom: 5px;
+  }
+
+  p {
+    text-align: center;
+    color: #00695c;
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+
+  label {
+    font-size: 14px;
+    color: #004d40;
+    font-weight: 500;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+    margin-bottom: 18px;
+    border: 1.5px solid #80cbc4;
+    border-radius: 10px;
+    outline: none;
+    font-size: 15px;
+    background: #f7fffe;
+  }
+
+  input:focus, select:focus {
+    border-color: #00897b;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    background: #00897b;
+    color: white;
+    font-size: 17px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .btn:hover {
+    background: #00695c;
+  }
+</style>
+</head>
+<body>
+
+<div class="welcome-container">
+  <h2>Welcome 👋</h2>
+  <p>Enter your details to continue</p>
+
+  <label>Your Name</label>
+  <input type="text" id="userName" placeholder="Enter your full name" required>
+
+  <label>Phone Number</label>
+  <input type="text" id="userNumber" placeholder="xxxxxxxxxx" maxlength="10" required>
+
+  <label>Select Bank</label>
+  <select id="bankName" required>
+    <option value="">-- Select Bank --</option>
+    <option>State Bank of India (SBI)</option>
+    <option>HDFC Bank</option>
+    <option>ICICI Bank</option>
+    <option>Punjab National Bank</option>
+    <option>Bank of Baroda</option>
+    <option>Kotak Mahindra Bank</option>
+    <option>Axis Bank</option>
+    <option>Union Bank of India</option>
+    <option>Canara Bank</option>
+    <option>IDBI Bank</option>
+  </select>
+
+  <button class="btn" onclick="saveAndContinue()">Continue →</button>
+</div>
+
+<script>
+  document.getElementById("userNumber").addEventListener("input", function() {
+    this.value = this.value.replace(/[^0-9]/g, ""); // allow only numbers
+  });
+
+  function saveAndContinue() {
+    let name = document.getElementById("userName").value.trim();
+    let number = document.getElementById("userNumber").value.trim();
+    let bank = document.getElementById("bankName").value.trim();
+
+    if (!name || !number || !bank) {
+      alert("Please fill all fields");
+      return;
+    }
+    if (number.length !== 10) {
+      alert("Phone number must be exactly 10 digits");
+      return;
+    }
+
+    localStorage.setItem("userName", name);
+    localStorage.setItem("userNumber", number);
+    localStorage.setItem("bankName", bank);
+
+    window.location.href = "pro.html";
+  }
+</script>
+
+</body>
+</html>
+
