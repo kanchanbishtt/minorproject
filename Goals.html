@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals - Smart Budget Manager</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <h2>Smart Budget</h2>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="Transactions.html" class="nav-item">
+                    <span>💳</span> Transactions
+                </a>
+                <a href="Analytics.html" class="nav-item">
+                    <span>📈</span> Analytics
+                </a>
+                <a href="Goals.html" class="nav-item active">
+                    <span>🎯</span> Goals
+                </a>
+                <a href="Settings.html" class="nav-item">
+                    <span>⚙️</span> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Smart Budget Manager</p>
+                <small>© 2025</small>
+            </div>
+        </aside>
+
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" id="mobileToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Savings Goals</h1>
+                    <p>Track your savings progress</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn-icon" id="themeToggle" title="Toggle Theme">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button class="btn-primary" id="addGoalBtn">
+                        ➕ Add Goal
+                    </button>
+                </div>
+            </header>
+
+            <!-- Current Balance Card -->
+            <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="summary-card balance-card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-content">
+                        <p class="card-label">Current Balance</p>
+                        <h3 class="card-value" id="currentBalance">₹0</h3>
+                    </div>
+                </div>
+                <div class="summary-card goal-card">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-content">
+                        <p class="card-label">Active Goals</p>
+                        <h3 class="card-value" id="activeGoalsCount">0</h3>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">✅</div>
+                    <div class="card-content">
+                        <p class="card-label">Completed Goals</p>
+                        <h3 class="card-value" id="completedGoalsCount">0</h3>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">💪</div>
+                    <div class="card-content">
+                        <p class="card-label">Total Saved</p>
+                        <h3 class="card-value" id="totalSaved">₹0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Goal Form (Hidden by default) -->
+            <div class="goal-form-container" id="goalFormContainer" style="display: none;">
+                <div class="goal-setup">
+                    <div class="section-header">
+                        <h3>Create New Savings Goal</h3>
+                        <button class="btn-secondary" id="cancelGoalBtn">Cancel</button>
+                    </div>
+                    <form id="goalForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="goalName">Goal Name</label>
+                                <input type="text" id="goalName" placeholder="e.g., New Laptop, Vacation" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="goalAmount">Target Amount (₹)</label>
+                                <input type="number" id="goalAmount" placeholder="e.g., 50000" step="100" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="goalDeadline">Target Date</label>
+                                <input type="date" id="goalDeadline" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="goalCategory">Category</label>
+                                <select id="goalCategory" required>
+                                    <option value="savings">💰 Savings</option>
+                                    <option value="travel">✈️ Travel</option>
+                                    <option value="gadgets">📱 Gadgets</option>
+                                    <option value="education">📚 Education</option>
+                                    <option value="investment">📈 Investment</option>
+                                    <option value="emergency">🚨 Emergency Fund</option>
+                                    <option value="other">📦 Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalDescription">Description (Optional)</label>
+                            <input type="text" id="goalDescription" placeholder="Add notes about your goal">
+                        </div>
+                        <button type="submit" class="btn-primary">🎯 Create Goal</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Goals List -->
+            <div class="goals-container">
+                <h3>Active Goals</h3>
+                <div id="activeGoalsList" class="goals-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Completed Goals List -->
+            <div class="goals-container">
+                <h3>Completed Goals 🎉</h3>
+                <div id="completedGoalsList" class="goals-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Savings Tips -->
+            <div class="insights-panel">
+                <h3>💡 Savings Tips</h3>
+                <div id="savingsTips">
+                    <div class="insight-item info">
+                        💰 Automate your savings by setting aside a fixed percentage of your income each month.
+                    </div>
+                    <div class="insight-item success">
+                        🎯 Break larger goals into smaller milestones to stay motivated.
+                    </div>
+                    <div class="insight-item info">
+                        📊 Track your progress regularly and adjust your spending habits accordingly.
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="js/app.js"></script>
+    <script src="js/goals.js"></script>
+</body>
+
+</html>

@@ -2,134 +2,248 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Settings</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Smart Budget Manager</title>
 
-  <link rel="stylesheet" href="pro.css" />
-  <script src="pro.js" defer></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <h2>Smart Budget</h2>
+            </div>
 
-  <div class="app">
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="Transactions.html" class="nav-item">
+                    <span>💳</span> Transactions
+                </a>
+                <a href="Analytics.html" class="nav-item">
+                    <span>📈</span> Analytics
+                </a>
+                <a href="Goals.html" class="nav-item">
+                    <span>🎯</span> Goals
+                </a>
+                <a href="Settings.html" class="nav-item active">
+                    <span>⚙️</span> Settings
+                </a>
+            </nav>
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="logo">💰</div>
-        <h1>SmartBudget</h1>
-      </div>
+            <div class="sidebar-footer">
+                <p>Smart Budget Manager</p>
+                <small>© 2025</small>
+            </div>
+        </aside>
 
-      <nav class="menu">
-        <a href="pro.html" class="menu-item">Dashboard</a>
-        <a href="transaction.html" class="menu-item">Transactions</a>
-        <a href="report.html" class="menu-item">Reports</a>
-        <a href="settings.html" class="menu-item active">Settings</a>
-      </nav>
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" id="mobileToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
 
-      <div class="sidebar-footer">
-        <small>© 2025 Kanchan</small>
-      </div>
-    </aside>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Settings</h1>
+                    <p>Customize your experience</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn-icon" id="themeToggle" title="Toggle Theme">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </header>
 
-    <!-- Main -->
-    <div class="main">
+            <!-- Appearance Settings -->
+            <div class="settings-section">
+                <h3>🎨 Appearance</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Theme</h4>
+                            <p>Choose your preferred color theme</p>
+                        </div>
+                        <select id="themeSelect" class="setting-select">
+                            <option value="light">☀️ Light</option>
+                            <option value="dark">🌙 Dark</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-      <header class="topbar">
-        <h2>Settings</h2>
-      </header>
+            <!-- Currency Settings -->
+            <div class="settings-section">
+                <h3>💱 Currency & Format</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Currency Symbol</h4>
+                            <p>Select your preferred currency</p>
+                        </div>
+                        <select id="currencySelect" class="setting-select">
+                            <option value="₹">₹ Indian Rupee (INR)</option>
+                            <option value="$">$ US Dollar (USD)</option>
+                            <option value="€">€ Euro (EUR)</option>
+                            <option value="£">£ British Pound (GBP)</option>
+                            <option value="¥">¥ Japanese Yen (JPY)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Date Format</h4>
+                            <p>Choose how dates should be displayed</p>
+                        </div>
+                        <select id="dateFormatSelect" class="setting-select">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-      <div class="setting-card">
-        <h3>Theme</h3>
-        <label class="switch">
-          <input type="checkbox" id="toggleTheme">
-          <span class="slider"></span>
-        </label>
-        <p>Enable dark mode</p>
-      </div>
+            <!-- Budget Limits -->
+            <div class="settings-section">
+                <h3>📊 Budget Limits</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Monthly Budget Limit</h4>
+                            <p>Set a monthly spending limit (optional)</p>
+                        </div>
+                        <input type="number" id="monthlyBudget" class="setting-input" placeholder="Enter amount"
+                            step="100">
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Alert Threshold</h4>
+                            <p>Get alerts when spending reaches this percentage</p>
+                        </div>
+                        <select id="alertThreshold" class="setting-select">
+                            <option value="50">50%</option>
+                            <option value="75">75%</option>
+                            <option value="80">80%</option>
+                            <option value="90">90%</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-      <div class="setting-card">
-        <h3>Saving Goal (%)</h3>
-        <input type="number" id="goalInput" placeholder="Enter goal % example: 20">
-        <button id="saveGoalBtn">Save Goal</button>
-      </div>
+            <!-- Notifications -->
+            <div class="settings-section">
+                <h3>🔔 Notifications</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Budget Alerts</h4>
+                            <p>Get notified when approaching budget limit</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="budgetAlerts" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Goal Reminders</h4>
+                            <p>Remind me about my savings goals</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="goalReminders" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-      <div class="setting-card danger">
-        <h3>Danger Zone</h3>
-        <button id="resetDataBtn">Reset All Data</button>
-      </div>
+            <!-- Data Management -->
+            <div class="settings-section">
+                <h3>💾 Data Management</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Export All Data</h4>
+                            <p>Download all your transactions and goals</p>
+                        </div>
+                        <button class="btn-secondary" id="exportAllBtn">📥 Export</button>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Import Data</h4>
+                            <p>Import transactions from CSV file</p>
+                        </div>
+                        <button class="btn-secondary" id="importBtn">📤 Import</button>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Clear All Data</h4>
+                            <p class="danger-text">⚠️ This will delete all your data permanently</p>
+                        </div>
+                        <button class="btn-danger" id="clearDataBtn">🗑️ Clear Data</button>
+                    </div>
+                </div>
+            </div>
 
+            <!-- App Information -->
+            <div class="settings-section">
+                <h3>ℹ️ About</h3>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Smart Budget Manager</h4>
+                            <p>Version 1.0.0</p>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                A simple and powerful budget tracking application
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn-primary" id="saveSettingsBtn" style="padding: 1rem 3rem;">
+                    💾 Save Settings
+                </button>
+            </div>
+        </main>
     </div>
-  </div>
 
-  <script>
-    /* Load saved theme */
-    const savedTheme = localStorage.getItem("theme");
-    const toggleThemeCheckbox = document.getElementById("toggleTheme");
+    <!-- Import Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Data</h3>
+                <button class="modal-close" id="closeImportModal">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                    Select a CSV file containing your transactions
+                </p>
+                <input type="file" id="fileInput" accept=".csv" style="margin-bottom: 1rem;">
+                <button class="btn-primary" id="confirmImport">Import File</button>
+            </div>
+        </div>
+    </div>
 
-    if (savedTheme === "dark") {
-      document.body.classList.add("dark-mode");
-      toggleThemeCheckbox.checked = true;
-    }
-
-    /* Load saved goal */
-    const savedGoal = localStorage.getItem("savingGoal");
-    if (savedGoal) {
-      document.getElementById("goalInput").value = savedGoal;
-    }
-
-    /* Mobile Menu Toggle */
-    const mobileMenuToggle = document.getElementById("mobileMenuToggle");
-    const sidebar = document.getElementById("sidebar");
-
-    if (mobileMenuToggle) {
-      mobileMenuToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("mobile-open");
-      });
-
-      document.addEventListener("click", (e) => {
-        if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
-          sidebar.classList.remove("mobile-open");
-        }
-      });
-
-      document.querySelectorAll(".menu-item").forEach(item => {
-        item.addEventListener("click", () => {
-          sidebar.classList.remove("mobile-open");
-        });
-      });
-    }
-
-    /* -------- Theme Toggle -------- */
-    toggleThemeCheckbox.addEventListener("change", () => {
-      document.body.classList.toggle("dark-mode");
-      const isDark = document.body.classList.contains("dark-mode");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    });
-
-    /* -------- Save Goal -------- */
-    document.getElementById("saveGoalBtn").addEventListener("click", () => {
-      const val = document.getElementById("goalInput").value;
-      if (!val || val <= 0 || val > 100) {
-        alert("Please enter a valid percentage between 1 and 100");
-        return;
-      }
-      localStorage.setItem("savingGoal", val);
-      alert("Savings goal updated to " + val + "%!");
-    });
-
-    /* -------- Reset All Data -------- */
-    document.getElementById("resetDataBtn").addEventListener("click", () => {
-      if (!confirm("Are you sure? This will delete all transactions. This action cannot be undone.")) return;
-      localStorage.removeItem("transactions");
-      alert("All data has been reset!");
-      window.location.href = "pro.html";
-    });
-  </script>
-
+    <!-- Custom JavaScript -->
+    <script src="js/app.js"></script>
+    <script src="js/settings.js"></script>
 </body>
 
 </html>

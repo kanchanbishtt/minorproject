@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - Smart Budget Manager</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <h2>Smart Budget</h2>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="Transactions.html" class="nav-item active">
+                    <span>💳</span> Transactions
+                </a>
+                <a href="Analytics.html" class="nav-item">
+                    <span>📈</span> Analytics
+                </a>
+                <a href="Goals.html" class="nav-item">
+                    <span>🎯</span> Goals
+                </a>
+                <a href="Settings.html" class="nav-item">
+                    <span>⚙️</span> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Smart Budget Manager</p>
+                <small>© 2025</small>
+            </div>
+        </aside>
+
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" id="mobileToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Transactions</h1>
+                    <p>Manage all your income and expenses</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn-icon" id="themeToggle" title="Toggle Theme">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button class="btn-primary" id="addTransactionBtn">
+                        ➕ Add Transaction
+                    </button>
+                </div>
+            </header>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card income-card">
+                    <div class="card-icon">💵</div>
+                    <div class="card-content">
+                        <p class="card-label">Total Income</p>
+                        <h3 class="card-value" id="totalIncome">₹0</h3>
+                    </div>
+                </div>
+
+                <div class="summary-card expense-card">
+                    <div class="card-icon">💸</div>
+                    <div class="card-content">
+                        <p class="card-label">Total Expense</p>
+                        <h3 class="card-value" id="totalExpense">₹0</h3>
+                    </div>
+                </div>
+
+                <div class="summary-card balance-card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-content">
+                        <p class="card-label">Balance</p>
+                        <h3 class="card-value" id="balance">₹0</h3>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-content">
+                        <p class="card-label">Total Transactions</p>
+                        <h3 class="card-value" id="totalTransactions">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Transaction Form (Hidden by default) -->
+            <div class="transaction-form-container" id="transactionFormContainer" style="display: none;">
+                <div class="quick-add">
+                    <div class="section-header">
+                        <h3>Add New Transaction</h3>
+                        <button class="btn-secondary" id="cancelTransactionBtn">Cancel</button>
+                    </div>
+                    <form id="transactionForm" class="transaction-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <input type="text" id="description" placeholder="e.g., Grocery shopping" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="amount">Amount (₹)</label>
+                                <input type="number" id="amount" placeholder="0" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="type">Type</label>
+                                <select id="type" required>
+                                    <option value="expense">Expense</option>
+                                    <option value="income">Income</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="category">Category</label>
+                                <select id="category" required>
+                                    <option value="food">🍔 Food</option>
+                                    <option value="transport">🚗 Transport</option>
+                                    <option value="shopping">🛍️ Shopping</option>
+                                    <option value="bills">💡 Bills</option>
+                                    <option value="entertainment">🎬 Entertainment</option>
+                                    <option value="health">⚕️ Health</option>
+                                    <option value="education">📚 Education</option>
+                                    <option value="salary">💼 Salary</option>
+                                    <option value="other">📦 Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="date">Date</label>
+                                <input type="date" id="date" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            ➕ Add Transaction
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search transactions...">
+                </div>
+                <div class="filter-group">
+                    <select id="filterType">
+                        <option value="all">All Types</option>
+                        <option value="income">Income Only</option>
+                        <option value="expense">Expense Only</option>
+                    </select>
+                    <select id="filterCategory">
+                        <option value="all">All Categories</option>
+                        <option value="food">Food</option>
+                        <option value="transport">Transport</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="bills">Bills</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="education">Education</option>
+                        <option value="salary">Salary</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select id="filterSort">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="highest">Highest Amount</option>
+                        <option value="lowest">Lowest Amount</option>
+                    </select>
+                    <button class="btn-secondary" id="clearFilters">Clear</button>
+                </div>
+            </div>
+
+            <!-- All Transactions -->
+            <div class="all-transactions">
+                <div class="section-header">
+                    <h3>All Transactions</h3>
+                    <button class="btn-secondary" id="exportBtn">📥 Export</button>
+                </div>
+                <div id="allTransactionsList" class="transactions-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Transactions</h3>
+                <button class="modal-close" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <button class="btn-primary" id="exportCSV">📄 Export as CSV</button>
+                <button class="btn-primary" id="exportJSON">📋 Export as JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="js/app.js"></script>
+    <script src="js/transactions.js"></script>
+</body>
+
+</html>
