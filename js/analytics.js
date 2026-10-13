@@ -42,29 +42,35 @@ class AnalyticsPage {
         });
     }
 
-    getFilteredTransactions() {
+    // Inclusive bounds of the selected period as local YYYY-MM-DD strings, or null for All Time
+    getPeriodRange() {
         const period = document.getElementById('timePeriod').value;
-        const now = new Date();
-        let filtered = this.transactions;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const iso = date => BudgetUtils.toLocalISODate(date);
 
         switch (period) {
             case 'week':
-                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                filtered = this.transactions.filter(t => new Date(t.date) >= weekAgo);
-                break;
+                return { start: iso(new Date(year, month, today.getDate() - 6)), end: iso(today) };
             case 'month':
-                const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
-                filtered = this.transactions.filter(t => new Date(t.date) >= monthAgo);
-                break;
+                return { start: iso(new Date(year, month, 1)), end: iso(new Date(year, month + 1, 0)) };
             case 'year':
-                const yearAgo = new Date(now.getFullYear(), 0, 1);
-                filtered = this.transactions.filter(t => new Date(t.date) >= yearAgo);
-                break;
+                return { start: iso(new Date(year, 0, 1)), end: iso(new Date(year, 11, 31)) };
             default:
-                filtered = this.transactions;
+                return null;
         }
+    }
 
-        return filtered;
+    getFilteredTransactions() {
+        const range = this.getPeriodRange();
+        if (!range) return this.transactions;
+
+        // Compare as local calendar dates; YYYY-MM-DD strings sort chronologically
+        return this.transactions.filter(t => {
+            const date = BudgetUtils.toLocalISODate(BudgetUtils.parseLocalDate(t.date));
+            return date >= range.start && date <= range.end;
+        });
     }
 
     updateSummary() {
