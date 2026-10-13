@@ -186,7 +186,7 @@
                     <div class="setting-item">
                         <div class="setting-info">
                             <h4>Import Data</h4>
-                            <p>Import transactions from CSV file</p>
+                            <p>Add transactions from a CSV file, or restore a JSON backup</p>
                         </div>
                         <button class="btn-secondary" id="importBtn">📤 Import</button>
                     </div>
@@ -234,9 +234,10 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                    Select a CSV file containing your transactions
+                    Choose a CSV file of transactions (added to your data) or a JSON backup
+                    from Export All Data (replaces your data)
                 </p>
-                <input type="file" id="fileInput" accept=".csv" style="margin-bottom: 1rem;">
+                <input type="file" id="fileInput" accept=".csv,.json,text/csv,application/json" style="margin-bottom: 1rem;">
                 <button class="btn-primary" id="confirmImport">Import File</button>
             </div>
         </div>
