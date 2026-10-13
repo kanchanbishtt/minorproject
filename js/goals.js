@@ -190,15 +190,15 @@ class GoalsPage {
                 <div class="goal-header">
                     <div class="goal-icon">${icon}</div>
                     <div class="goal-info">
-                        <h4>${goal.name}</h4>
-                        ${goal.description ? `<p class="goal-description">${goal.description}</p>` : ''}
-                        <p class="goal-meta">${goal.category} • Target: ${deadlineText}</p>
+                        <h4>${BudgetUtils.escapeHTML(goal.name)}</h4>
+                        ${goal.description ? `<p class="goal-description">${BudgetUtils.escapeHTML(goal.description)}</p>` : ''}
+                        <p class="goal-meta">${BudgetUtils.escapeHTML(goal.category)} • Target: ${deadlineText}</p>
                     </div>
                     <div class="goal-actions">
-                        <button class="btn-icon goal-complete" data-id="${goal.id}" title="${goal.completed ? 'Mark incomplete' : 'Mark complete'}">
+                        <button class="btn-icon goal-complete" data-id="${BudgetUtils.escapeHTML(goal.id)}" title="${goal.completed ? 'Mark incomplete' : 'Mark complete'}">
                             ${goal.completed ? '↩️' : '✓'}
                         </button>
-                        <button class="btn-icon goal-delete" data-id="${goal.id}" title="Delete">
+                        <button class="btn-icon goal-delete" data-id="${BudgetUtils.escapeHTML(goal.id)}" title="Delete">
                             🗑️
                         </button>
                     </div>
