@@ -83,7 +83,8 @@ class AnalyticsPage {
         // Calculate average daily spending
         const days = this.calculatePeriodDays(filtered);
         const avgDaily = days > 0 ? totals.expense / days : 0;
-        document.getElementById('avgDaily').textContent = `₹${avgDaily.toFixed(0).toLocaleString('en-IN')}`;
+        // Round as a number: toFixed() returns a string, which toLocaleString() leaves ungrouped
+        document.getElementById('avgDaily').textContent = `₹${Math.round(avgDaily).toLocaleString('en-IN')}`;
 
         // Calculate savings rate
         const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
