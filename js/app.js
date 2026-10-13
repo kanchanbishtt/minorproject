@@ -245,8 +245,13 @@ class BudgetManager {
         const category = document.getElementById('category').value;
         const date = document.getElementById('date').value;
 
-        if (!description || !amount || !date) {
+        if (!description || !date) {
             alert('Please fill all fields');
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            alert('Please enter an amount greater than 0');
             return;
         }
 
