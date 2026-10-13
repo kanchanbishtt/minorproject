@@ -131,13 +131,11 @@ class SettingsPage {
             version: '1.0.0'
         };
 
-        const jsonContent = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `budget-manager-backup-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
+        BudgetUtils.downloadFile(
+            JSON.stringify(exportData, null, 2),
+            `budget-manager-backup-${BudgetUtils.toLocalISODate(new Date())}.json`,
+            'application/json'
+        );
 
         this.showNotification('All data exported successfully!');
     }
