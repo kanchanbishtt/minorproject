@@ -10,6 +10,7 @@ class TransactionsPage {
     }
 
     init() {
+        document.querySelector('label[for="amount"]').textContent = `Amount (${this.currency})`;
         this.updateSummary();
         this.renderTransactions();
         this.attachEventListeners();
@@ -124,9 +125,9 @@ class TransactionsPage {
     updateSummary() {
         const totals = this.calculateTotals();
 
-        document.getElementById('totalIncome').textContent = `₹${totals.income.toLocaleString('en-IN')}`;
-        document.getElementById('totalExpense').textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
-        document.getElementById('balance').textContent = `₹${totals.balance.toLocaleString('en-IN')}`;
+        document.getElementById('totalIncome').textContent = BudgetUtils.formatMoney(totals.income, this.currency);
+        document.getElementById('totalExpense').textContent = BudgetUtils.formatMoney(totals.expense, this.currency);
+        document.getElementById('balance').textContent = BudgetUtils.formatMoney(totals.balance, this.currency);
         document.getElementById('totalTransactions').textContent = this.transactions.length;
     }
 
