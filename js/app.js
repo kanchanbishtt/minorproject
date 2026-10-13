@@ -87,6 +87,145 @@ class BudgetManager {
         this.renderRecentTransactions();
         this.generateInsights();
         this.setupTransactionForm();
+        this.setupExport();
+    }
+
+    // ========== EXPORT (dashboard) ==========
+    setupExport() {
+        const exportBtn = document.getElementById('exportBtn');
+        const modal = document.getElementById('exportModal');
+        if (!exportBtn || !modal) return;
+
+        exportBtn.addEventListener('click', () => modal.classList.add('active'));
+        document.getElementById('closeModal').addEventListener('click', () => this.closeExportModal());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeExportModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeExportModal();
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', () => this.exportCSV());
+        document.getElementById('exportPDF').addEventListener('click', () => this.exportPDF());
+    }
+
+    closeExportModal() {
+        document.getElementById('exportModal').classList.remove('active');
+    }
+
+    exportCSV() {
+        if (this.transactions.length === 0) {
+            alert('No transactions to export');
+            return;
+        }
+
+        const headers = ['Date', 'Description', 'Type', 'Category', 'Amount'];
+        const rows = this.transactions.map(t => [t.date, t.description, t.type, t.category, t.amount]);
+        const csv = [headers, ...rows]
+            .map(row => row.map(cell => this.toCSVCell(cell)).join(','))
+            .join('\r\n');
+
+        // BOM so Excel reads the file as UTF-8
+        this.downloadFile('﻿' + csv, `transactions-${this.toLocalISODate(new Date())}.csv`, 'text/csv;charset=utf-8');
+        this.closeExportModal();
+        this.showNotification('CSV exported successfully!');
+    }
+
+    toCSVCell(value) {
+        let text = String(value ?? '');
+        // Stop spreadsheets from evaluating text cells as formulas
+        if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    exportPDF() {
+        if (this.transactions.length === 0) {
+            alert('No transactions to export');
+            return;
+        }
+        if (!window.jspdf) {
+            alert('PDF export is unavailable: the PDF library failed to load. Check your internet connection and reload.');
+            return;
+        }
+
+        const doc = new window.jspdf.jsPDF();
+        const totals = this.calculateTotals();
+        const pageBottom = doc.internal.pageSize.getHeight() - 15;
+        const col = { date: 14, description: 40, type: 118, category: 142, amount: 196 };
+        let y = 20;
+
+        doc.setFontSize(16);
+        doc.text('Smart Budget Manager - Transactions', 14, y);
+        doc.setFontSize(10);
+        y += 7;
+        doc.text(`Generated on ${this.toLocalISODate(new Date())}`, 14, y);
+
+        doc.setFontSize(11);
+        y += 10;
+        doc.text(`Total Income: ${this.formatPDFAmount(totals.income)}`, 14, y);
+        y += 6;
+        doc.text(`Total Expense: ${this.formatPDFAmount(totals.expense)}`, 14, y);
+        y += 6;
+        doc.text(`Balance: ${this.formatPDFAmount(totals.balance)}`, 14, y);
+
+        const drawHeader = () => {
+            doc.setFont('helvetica', 'bold');
+            doc.text('Date', col.date, y);
+            doc.text('Description', col.description, y);
+            doc.text('Type', col.type, y);
+            doc.text('Category', col.category, y);
+            doc.text('Amount', col.amount, y, { align: 'right' });
+            doc.line(14, y + 2, 196, y + 2);
+            doc.setFont('helvetica', 'normal');
+            y += 8;
+        };
+
+        doc.setFontSize(10);
+        y += 12;
+        drawHeader();
+
+        this.transactions.forEach(t => {
+            if (y > pageBottom) {
+                doc.addPage();
+                y = 20;
+                drawHeader();
+            }
+            const sign = t.type === 'income' ? '+' : '-';
+            doc.text(String(t.date), col.date, y);
+            doc.text(doc.splitTextToSize(String(t.description), col.type - col.description - 4)[0], col.description, y);
+            doc.text(String(t.type), col.type, y);
+            doc.text(String(t.category), col.category, y);
+            doc.text(sign + this.formatPDFAmount(t.amount), col.amount, y, { align: 'right' });
+            y += 7;
+        });
+
+        doc.save(`transactions-${this.toLocalISODate(new Date())}.pdf`);
+        this.closeExportModal();
+        this.showNotification('PDF exported successfully!');
+    }
+
+    // jsPDF's built-in fonts cannot render ₹, so spell it out
+    formatPDFAmount(amount) {
+        const sign = amount < 0 ? '-' : '';
+        return `${sign}Rs. ${Math.abs(amount).toLocaleString('en-IN')}`;
+    }
+
+    downloadFile(content, filename, mimeType) {
+        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    // YYYY-MM-DD in the user's local timezone (toISOString would give the UTC date)
+    toLocalISODate(date) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${date.getFullYear()}-${month}-${day}`;
     }
 
     setupTransactionForm() {
