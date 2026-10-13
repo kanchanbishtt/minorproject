@@ -73,8 +73,13 @@ class GoalsPage {
         const category = document.getElementById('goalCategory').value;
         const description = document.getElementById('goalDescription').value.trim();
 
-        if (!name || !amount || !deadline) {
+        if (!name || !deadline) {
             alert('Please fill all required fields');
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            alert('Please enter a target amount greater than 0');
             return;
         }
 
