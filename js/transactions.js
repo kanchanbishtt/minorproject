@@ -5,6 +5,7 @@
 class TransactionsPage {
     constructor() {
         this.transactions = this.loadFromStorage('transactions') || [];
+        this.currency = BudgetUtils.loadCurrency();
         this.init();
     }
 
@@ -140,7 +141,7 @@ class TransactionsPage {
             return;
         }
 
-        container.innerHTML = this.transactions.map(t => this.createTransactionHTML(t)).join('');
+        container.innerHTML = this.transactions.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {
@@ -149,37 +150,6 @@ class TransactionsPage {
                 this.deleteTransaction(id);
             });
         });
-    }
-
-    createTransactionHTML(transaction) {
-        const categoryIcons = {
-            food: '🍔', transport: '🚗', shopping: '🛍️', bills: '💡',
-            entertainment: '🎬', health: '⚕️', education: '📚', salary: '💼', other: '📦'
-        };
-
-        const icon = categoryIcons[transaction.category] || '📦';
-        const sign = transaction.type === 'income' ? '+' : '-';
-        const formattedDate = new Date(transaction.date).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
-
-        return `
-            <div class="transaction-item ${transaction.type}">
-                <div class="transaction-left">
-                    <div class="transaction-icon">${icon}</div>
-                    <div class="transaction-details">
-                        <h4>${transaction.description}</h4>
-                        <p class="transaction-meta">${formattedDate} • ${transaction.category}</p>
-                    </div>
-                </div>
-                <div class="transaction-right">
-                    <div class="transaction-amount ${transaction.type}">
-                        ${sign}₹${transaction.amount.toLocaleString('en-IN')}
-                    </div>
-                    <button class="transaction-delete" data-id="${transaction.id}">🗑️ Delete</button>
-                </div>
-            </div>
-        `;
     }
 
     filterTransactions() {
@@ -232,7 +202,7 @@ class TransactionsPage {
             return;
         }
 
-        container.innerHTML = filtered.map(t => this.createTransactionHTML(t)).join('');
+        container.innerHTML = filtered.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {
