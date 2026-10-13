@@ -210,25 +210,26 @@ class BudgetManager {
         };
 
         const icon = categoryIcons[transaction.category] || '📦';
-        const sign = transaction.type === 'income' ? '+' : '-';
+        const type = transaction.type === 'income' ? 'income' : 'expense';
+        const sign = type === 'income' ? '+' : '-';
         const formattedDate = new Date(transaction.date).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
 
         return `
-            <div class="transaction-item ${transaction.type}">
+            <div class="transaction-item ${type}">
                 <div class="transaction-left">
                     <div class="transaction-icon">${icon}</div>
                     <div class="transaction-details">
-                        <h4>${transaction.description}</h4>
-                        <p class="transaction-meta">${formattedDate} • ${transaction.category}</p>
+                        <h4>${this.escapeHTML(transaction.description)}</h4>
+                        <p class="transaction-meta">${formattedDate} • ${this.escapeHTML(transaction.category)}</p>
                     </div>
                 </div>
                 <div class="transaction-right">
-                    <div class="transaction-amount ${transaction.type}">
+                    <div class="transaction-amount ${type}">
                         ${sign}₹${transaction.amount.toLocaleString('en-IN')}
                     </div>
-                    <button class="transaction-delete" data-id="${transaction.id}">🗑️ Delete</button>
+                    <button class="transaction-delete" data-id="${this.escapeHTML(transaction.id)}">🗑️ Delete</button>
                 </div>
             </div>
         `;
@@ -278,7 +279,7 @@ class BudgetManager {
             if (percentage > 40) {
                 insights.push({
                     type: 'warning',
-                    message: `⚠️ You're spending ${percentage.toFixed(1)}% of your expenses on ${category}. Consider reducing it.`
+                    message: `⚠️ You're spending ${percentage.toFixed(1)}% of your expenses on ${this.escapeHTML(category)}. Consider reducing it.`
                 });
             }
         });
@@ -313,6 +314,12 @@ class BudgetManager {
         container.innerHTML = insights
             .map(i => `<div class="insight-item ${i.type}">${i.message}</div>`)
             .join('');
+    }
+
+    // Escape user-supplied text before inserting it into innerHTML
+    escapeHTML(value) {
+        const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(value).replace(/[&<>"']/g, ch => entities[ch]);
     }
 
     setDefaultDate() {
