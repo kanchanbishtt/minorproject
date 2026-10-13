@@ -61,8 +61,12 @@ class TransactionsPage {
             document.getElementById('exportModal').classList.add('active');
         });
 
-        document.getElementById('closeModal').addEventListener('click', () => {
-            document.getElementById('exportModal').classList.remove('active');
+        document.getElementById('closeModal').addEventListener('click', () => this.closeExportModal());
+        document.getElementById('exportModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.closeExportModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeExportModal();
         });
 
         document.getElementById('exportCSV').addEventListener('click', () => this.exportCSV());
@@ -225,6 +229,10 @@ class TransactionsPage {
         this.renderTransactions();
     }
 
+    closeExportModal() {
+        document.getElementById('exportModal').classList.remove('active');
+    }
+
     exportCSV() {
         if (this.transactions.length === 0) {
             alert('No transactions to export');
@@ -238,7 +246,7 @@ class TransactionsPage {
         );
 
         this.showNotification('CSV exported successfully!');
-        document.getElementById('exportModal').classList.remove('active');
+        this.closeExportModal();
     }
 
     exportJSON() {
@@ -254,7 +262,7 @@ class TransactionsPage {
         );
 
         this.showNotification('JSON exported successfully!');
-        document.getElementById('exportModal').classList.remove('active');
+        this.closeExportModal();
     }
 
     setDefaultDate() {
