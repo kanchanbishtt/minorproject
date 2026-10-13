@@ -11,7 +11,7 @@ class TransactionsPage {
 
     init() {
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
         this.attachEventListeners();
         this.setDefaultDate();
     }
@@ -43,10 +43,10 @@ class TransactionsPage {
         });
 
         // Filters
-        document.getElementById('searchInput').addEventListener('input', () => this.filterTransactions());
-        document.getElementById('filterType').addEventListener('change', () => this.filterTransactions());
-        document.getElementById('filterCategory').addEventListener('change', () => this.filterTransactions());
-        document.getElementById('filterSort').addEventListener('change', () => this.filterTransactions());
+        document.getElementById('searchInput').addEventListener('input', () => this.renderTransactions());
+        document.getElementById('filterType').addEventListener('change', () => this.renderTransactions());
+        document.getElementById('filterCategory').addEventListener('change', () => this.renderTransactions());
+        document.getElementById('filterSort').addEventListener('change', () => this.renderTransactions());
         document.getElementById('clearFilters').addEventListener('click', () => this.clearFilters());
 
         // Export
@@ -99,7 +99,7 @@ class TransactionsPage {
 
         // Update UI
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
 
         this.showNotification(`Transaction added: ${description}`);
     }
@@ -112,7 +112,7 @@ class TransactionsPage {
 
         // Update UI
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
 
         this.showNotification('Transaction deleted');
     }
@@ -138,7 +138,9 @@ class TransactionsPage {
         return { income, expense, balance: income - expense };
     }
 
-    renderAllTransactions() {
+    // Single render path: always applies the current search, filters and sort,
+    // so adding or deleting a transaction keeps the user's view intact
+    renderTransactions() {
         const container = document.getElementById('allTransactionsList');
 
         if (this.transactions.length === 0) {
@@ -146,18 +148,6 @@ class TransactionsPage {
             return;
         }
 
-        container.innerHTML = this.transactions.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
-
-        // Attach delete handlers
-        container.querySelectorAll('.transaction-delete').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = parseInt(btn.dataset.id);
-                this.deleteTransaction(id);
-            });
-        });
-    }
-
-    filterTransactions() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         const typeFilter = document.getElementById('filterType').value;
         const categoryFilter = document.getElementById('filterCategory').value;
@@ -200,8 +190,6 @@ class TransactionsPage {
         }
 
         // Render filtered results
-        const container = document.getElementById('allTransactionsList');
-
         if (filtered.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No matching transactions found.</p>';
             return;
@@ -223,7 +211,7 @@ class TransactionsPage {
         document.getElementById('filterType').value = 'all';
         document.getElementById('filterCategory').value = 'all';
         document.getElementById('filterSort').value = 'newest';
-        this.renderAllTransactions();
+        this.renderTransactions();
     }
 
     exportCSV() {
