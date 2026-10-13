@@ -186,6 +186,20 @@ class GoalsPage {
         this.attachGoalHandlers(container);
     }
 
+    // Whole calendar days from today to the deadline, both as local dates, so the
+    // time of day cannot turn the due date into "Overdue by 0 days"
+    daysLeftText(deadline) {
+        const today = BudgetUtils.parseLocalDate(BudgetUtils.toLocalISODate(new Date()));
+        const msPerDay = 24 * 60 * 60 * 1000;
+        // Round: a span crossing a DST change is not a whole number of 24h days
+        const days = Math.round((BudgetUtils.parseLocalDate(deadline) - today) / msPerDay);
+
+        if (days === 0) return 'Due today';
+        const count = Math.abs(days);
+        const unit = count === 1 ? 'day' : 'days';
+        return days > 0 ? `${count} ${unit} left` : `Overdue by ${count} ${unit}`;
+    }
+
     // saved: the part of the balance counted toward this goal (0 to goal.amount)
     createGoalHTML(goal, saved) {
         const categoryIcons = {
@@ -196,12 +210,10 @@ class GoalsPage {
         const icon = categoryIcons[goal.category] || '📦';
         const percentage = goal.amount > 0 ? (saved / goal.amount) * 100 : 0;
         const remaining = Math.max(goal.amount - saved, 0);
-        const deadlineText = new Date(goal.deadline).toLocaleDateString('en-IN', {
+        const deadlineText = BudgetUtils.parseLocalDate(goal.deadline).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
-
-        const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-        const daysLeftText = daysLeft > 0 ? `${daysLeft} days left` : `Overdue by ${Math.abs(daysLeft)} days`;
+        const daysLeftText = this.daysLeftText(goal.deadline);
 
         return `
             <div class="goal-item ${goal.completed ? 'completed' : ''}">
