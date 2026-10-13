@@ -375,21 +375,30 @@ class BudgetManager {
     }
 
     updateGoalProgress(currentBalance) {
-        const goal = this.loadFromStorage('goal') || { amount: 0 };
         const progressEl = document.getElementById('goalProgress');
         const progressBarEl = document.getElementById('goalProgressBar');
+        const labelEl = document.getElementById('goalLabel');
 
         if (!progressEl || !progressBarEl) return;
 
-        if (goal.amount === 0) {
-            progressEl.textContent = 'No goal set';
+        // Goals are created on the Goals page (js/goals.js)
+        const goals = this.loadFromStorage('goals') || [];
+        const activeGoals = goals.filter(g => !g.completed && g.amount > 0);
+
+        if (activeGoals.length === 0) {
+            progressEl.textContent = goals.length > 0 ? 'No active goal' : 'No goal set';
             progressBarEl.style.width = '0%';
+            if (labelEl) labelEl.textContent = 'Savings Goal';
             return;
         }
 
-        const percentage = Math.min((currentBalance / goal.amount) * 100, 100);
+        // Track the goal with the nearest deadline (YYYY-MM-DD strings sort chronologically)
+        const goal = activeGoals.reduce((nearest, g) => (g.deadline < nearest.deadline ? g : nearest));
+        const percentage = Math.min(Math.max((currentBalance / goal.amount) * 100, 0), 100);
+
         progressEl.textContent = `${percentage.toFixed(1)}%`;
         progressBarEl.style.width = `${percentage}%`;
+        if (labelEl) labelEl.textContent = `Savings Goal · ${goal.name}`;
     }
 
     generateInsights() {
