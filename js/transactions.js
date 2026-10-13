@@ -39,6 +39,8 @@ class TransactionsPage {
         document.getElementById('cancelTransactionBtn').addEventListener('click', () => {
             document.getElementById('transactionFormContainer').style.display = 'none';
             document.getElementById('transactionForm').reset();
+            // reset() blanks the date because its default is set from JS
+            this.setDefaultDate();
         });
 
         // Add transaction
