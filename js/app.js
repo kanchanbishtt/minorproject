@@ -30,16 +30,6 @@ class BudgetManager {
         return data ? JSON.parse(data) : null;
     }
 
-    // ========== STORAGE ==========
-    saveToStorage(key, data) {
-        localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    loadFromStorage(key) {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
-    }
-
     // ========== CURRENCY ==========
     // Symbols offered by the currency select on settings.html
     loadCurrency() {
