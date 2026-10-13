@@ -245,21 +245,18 @@ class TransactionsPage {
             return;
         }
 
-        const jsonContent = JSON.stringify(this.transactions, null, 2);
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `transactions-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
+        BudgetUtils.downloadFile(
+            JSON.stringify(this.transactions, null, 2),
+            `transactions-${BudgetUtils.toLocalISODate(new Date())}.json`,
+            'application/json'
+        );
 
         this.showNotification('JSON exported successfully!');
         document.getElementById('exportModal').classList.remove('active');
     }
 
     setDefaultDate() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = today;
+        document.getElementById('date').value = BudgetUtils.toLocalISODate(new Date());
     }
 
     showNotification(message) {
