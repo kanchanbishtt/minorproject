@@ -2,27 +2,69 @@
    ANALYTICS PAGE LOGIC
    ================================ */
 
+// One fixed colour per category, so a category looks the same in every chart
+const CATEGORY_COLORS = {
+    food: '#FF6384', transport: '#36A2EB', shopping: '#FFCE56', bills: '#4BC0C0',
+    entertainment: '#9966FF', health: '#FF9F40', education: '#8BC34A', salary: '#00ACC1',
+    other: '#A1887F'
+};
+// Handed out in order to categories not listed above (e.g. from imported files)
+const EXTRA_CATEGORY_COLORS = ['#F06292', '#7986CB', '#AED581', '#FFB74D', '#4DB6AC', '#BA68C8'];
+
 class AnalyticsPage {
     constructor() {
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.transactions = BudgetUtils.loadTransactions();
+        this.currency = BudgetUtils.loadCurrency();
         this.categoryChartInstance = null;
         this.incomeExpenseChartInstance = null;
         this.monthlyTrendChartInstance = null;
         this.topCategoriesChartInstance = null;
+        this.extraCategoryColors = new Map();
         this.init();
     }
 
     init() {
+        // Wire controls first so a rendering error cannot leave them dead
+        this.attachEventListeners();
         this.updateSummary();
         this.renderCharts();
         this.renderAnalysis();
         this.generateInsights();
-        this.attachEventListeners();
     }
 
     loadFromStorage(key) {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : null;
+    }
+
+    formatMoney(amount) {
+        return BudgetUtils.formatMoney(amount, this.currency);
+    }
+
+    // Chart.js tooltip options that show values as money. Line charts label each
+    // point by its dataset ("Income"), the others by the bar/slice label.
+    moneyTooltip(labelByDataset = false) {
+        return {
+            callbacks: {
+                label: ctx => `${labelByDataset ? ctx.dataset.label : ctx.label}: ${this.formatMoney(ctx.raw)}`
+            }
+        };
+    }
+
+    categoryColor(category) {
+        if (CATEGORY_COLORS[category]) return CATEGORY_COLORS[category];
+        if (!this.extraCategoryColors.has(category)) {
+            const next = EXTRA_CATEGORY_COLORS[this.extraCategoryColors.size % EXTRA_CATEGORY_COLORS.length];
+            this.extraCategoryColors.set(category, next);
+        }
+        return this.extraCategoryColors.get(category);
+    }
+
+    // Display name for a stored category key ("food" -> "Food"). Plain text:
+    // escape it before putting it into innerHTML.
+    categoryLabel(category) {
+        const text = String(category);
+        return text.charAt(0).toUpperCase() + text.slice(1);
     }
 
     attachEventListeners() {
@@ -32,58 +74,83 @@ class AnalyticsPage {
             this.renderAnalysis();
             this.generateInsights();
         });
+
+        // The theme toggle (app.js) switches a class on <body>; redraw charts in the new colours
+        new MutationObserver(() => this.renderCharts())
+            .observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Inclusive bounds of the selected period as local YYYY-MM-DD strings, or null for All Time
+    getPeriodRange() {
+        const period = document.getElementById('timePeriod').value;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const iso = date => BudgetUtils.toLocalISODate(date);
+
+        switch (period) {
+            case 'week': {
+                // Calendar week, Monday to Sunday (getDay() is 0 for Sunday)
+                const monday = today.getDate() - ((today.getDay() + 6) % 7);
+                return { start: iso(new Date(year, month, monday)), end: iso(new Date(year, month, monday + 6)) };
+            }
+            case 'month':
+                return { start: iso(new Date(year, month, 1)), end: iso(new Date(year, month + 1, 0)) };
+            case 'year':
+                return { start: iso(new Date(year, 0, 1)), end: iso(new Date(year, 11, 31)) };
+            default:
+                return null;
+        }
     }
 
     getFilteredTransactions() {
-        const period = document.getElementById('timePeriod').value;
-        const now = new Date();
-        let filtered = this.transactions;
+        const range = this.getPeriodRange();
+        if (!range) return this.transactions;
 
-        switch (period) {
-            case 'week':
-                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                filtered = this.transactions.filter(t => new Date(t.date) >= weekAgo);
-                break;
-            case 'month':
-                const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
-                filtered = this.transactions.filter(t => new Date(t.date) >= monthAgo);
-                break;
-            case 'year':
-                const yearAgo = new Date(now.getFullYear(), 0, 1);
-                filtered = this.transactions.filter(t => new Date(t.date) >= yearAgo);
-                break;
-            default:
-                filtered = this.transactions;
-        }
-
-        return filtered;
+        // Compare as local calendar dates; YYYY-MM-DD strings sort chronologically
+        return this.transactions.filter(t => {
+            const date = BudgetUtils.toLocalISODate(BudgetUtils.parseLocalDate(t.date));
+            return date >= range.start && date <= range.end;
+        });
     }
 
     updateSummary() {
         const filtered = this.getFilteredTransactions();
         const totals = this.calculateTotals(filtered);
 
-        document.getElementById('totalIncome').textContent = `₹${totals.income.toLocaleString('en-IN')}`;
-        document.getElementById('totalExpense').textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
+        document.getElementById('totalIncome').textContent = this.formatMoney(totals.income);
+        document.getElementById('totalExpense').textContent = this.formatMoney(totals.expense);
 
         // Calculate average daily spending
-        const days = this.calculateDays(filtered);
+        const days = this.calculatePeriodDays(filtered);
         const avgDaily = days > 0 ? totals.expense / days : 0;
-        document.getElementById('avgDaily').textContent = `₹${avgDaily.toFixed(0).toLocaleString('en-IN')}`;
+        document.getElementById('avgDaily').textContent = this.formatMoney(Math.round(avgDaily));
 
         // Calculate savings rate
         const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
         document.getElementById('savingsRate').textContent = `${savingsRate.toFixed(1)}%`;
     }
 
-    calculateDays(transactions) {
-        if (transactions.length === 0) return 0;
+    // Days the selected period has covered so far: from its start (or the first
+    // transaction, for All Time) to the later of today and the last transaction,
+    // capped at the period's end. Spending is averaged over these days.
+    calculatePeriodDays(transactions) {
+        const dates = transactions
+            .map(t => BudgetUtils.toLocalISODate(BudgetUtils.parseLocalDate(t.date)))
+            .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
+            .sort();
+        if (dates.length === 0) return 0;
 
-        const dates = transactions.map(t => new Date(t.date));
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-        const diff = maxDate - minDate;
-        return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+        const range = this.getPeriodRange();
+        const today = BudgetUtils.toLocalISODate(new Date());
+        const lastDate = dates[dates.length - 1];
+        const start = range ? range.start : dates[0];
+        let end = lastDate > today ? lastDate : today;
+        if (range && end > range.end) end = range.end;
+
+        // Round: a span crossing a DST change is not a whole number of 24h days
+        const msPerDay = 24 * 60 * 60 * 1000;
+        return Math.round((BudgetUtils.parseLocalDate(end) - BudgetUtils.parseLocalDate(start)) / msPerDay) + 1;
     }
 
     calculateTotals(transactions) {
@@ -98,7 +165,16 @@ class AnalyticsPage {
         return { income, expense, balance: income - expense };
     }
 
+    // Chart.js draws text and grid lines on canvas, so CSS cannot restyle them:
+    // copy the current theme's colours into the Chart.js defaults before rendering
+    applyChartTheme() {
+        const styles = getComputedStyle(document.body);
+        Chart.defaults.color = styles.getPropertyValue('--text-secondary').trim();
+        Chart.defaults.borderColor = styles.getPropertyValue('--border-color').trim();
+    }
+
     renderCharts() {
+        this.applyChartTheme();
         this.renderIncomeExpenseChart();
         this.renderCategoryChart();
         this.renderMonthlyTrendChart();
@@ -119,7 +195,7 @@ class AnalyticsPage {
             data: {
                 labels: ['Income', 'Expense', 'Balance'],
                 datasets: [{
-                    label: 'Amount (₹)',
+                    label: `Amount (${this.currency})`,
                     data: [totals.income, totals.expense, totals.balance],
                     backgroundColor: ['#26a69a', '#ef5350', '#42a5f5']
                 }]
@@ -128,7 +204,8 @@ class AnalyticsPage {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: this.moneyTooltip()
                 },
                 scales: {
                     y: { beginAtZero: true }
@@ -158,20 +235,18 @@ class AnalyticsPage {
         this.categoryChartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                labels: labels.map(l => this.categoryLabel(l)),
                 datasets: [{
                     data: data,
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0'
-                    ]
+                    backgroundColor: labels.map(l => this.categoryColor(l))
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom' },
+                    tooltip: this.moneyTooltip()
                 }
             }
         });
@@ -184,7 +259,7 @@ class AnalyticsPage {
         // Group by month
         const monthlyData = {};
         filtered.forEach(t => {
-            const date = new Date(t.date);
+            const date = BudgetUtils.parseLocalDate(t.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
             if (!monthlyData[monthKey]) {
@@ -198,9 +273,22 @@ class AnalyticsPage {
             }
         });
 
-        const sortedMonths = Object.keys(monthlyData).sort();
-        const incomeData = sortedMonths.map(m => monthlyData[m].income);
-        const expenseData = sortedMonths.map(m => monthlyData[m].expense);
+        // Every month from the first to the last entry, so months without activity
+        // show as 0 instead of being skipped (which made Jan sit next to Sept)
+        const monthKeys = Object.keys(monthlyData).filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
+        const sortedMonths = [];
+        if (monthKeys.length > 0) {
+            const [firstYear, firstMonth] = monthKeys[0].split('-').map(Number);
+            const lastKey = monthKeys[monthKeys.length - 1];
+            for (let i = 0; ; i++) {
+                const date = new Date(firstYear, firstMonth - 1 + i, 1);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                sortedMonths.push(key);
+                if (key === lastKey) break;
+            }
+        }
+        const incomeData = sortedMonths.map(m => (monthlyData[m] ? monthlyData[m].income : 0));
+        const expenseData = sortedMonths.map(m => (monthlyData[m] ? monthlyData[m].expense : 0));
 
         if (this.monthlyTrendChartInstance) {
             this.monthlyTrendChartInstance.destroy();
@@ -219,14 +307,14 @@ class AnalyticsPage {
                         data: incomeData,
                         borderColor: '#26a69a',
                         backgroundColor: 'rgba(38, 166, 154, 0.1)',
-                        tension: 0.4
+                        cubicInterpolationMode: 'monotone'
                     },
                     {
                         label: 'Expense',
                         data: expenseData,
                         borderColor: '#ef5350',
                         backgroundColor: 'rgba(239, 83, 80, 0.1)',
-                        tension: 0.4
+                        cubicInterpolationMode: 'monotone'
                     }
                 ]
             },
@@ -234,7 +322,8 @@ class AnalyticsPage {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: { position: 'top' },
+                    tooltip: this.moneyTooltip(true)
                 },
                 scales: {
                     y: { beginAtZero: true }
@@ -258,7 +347,7 @@ class AnalyticsPage {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
 
-        const labels = sorted.map(([cat]) => cat.charAt(0).toUpperCase() + cat.slice(1));
+        const labels = sorted.map(([cat]) => this.categoryLabel(cat));
         const data = sorted.map(([, amount]) => amount);
 
         if (this.topCategoriesChartInstance) {
@@ -266,13 +355,14 @@ class AnalyticsPage {
         }
 
         this.topCategoriesChartInstance = new Chart(ctx, {
-            type: 'horizontalBar',
+            // Chart.js v3+ removed 'horizontalBar'; indexAxis: 'y' makes this bar chart horizontal
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Amount (₹)',
+                    label: `Amount (${this.currency})`,
                     data: data,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                    backgroundColor: sorted.map(([cat]) => this.categoryColor(cat))
                 }]
             },
             options: {
@@ -280,7 +370,8 @@ class AnalyticsPage {
                 maintainAspectRatio: true,
                 indexAxis: 'y',
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: this.moneyTooltip()
                 },
                 scales: {
                     x: { beginAtZero: true }
@@ -309,12 +400,12 @@ class AnalyticsPage {
                     <div class="transaction-item">
                         <div class="transaction-left">
                             <div class="transaction-details">
-                                <h4>${category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                                <h4>${BudgetUtils.escapeHTML(this.categoryLabel(category))}</h4>
                                 <p class="transaction-meta">${percentage.toFixed(1)}% of total expenses</p>
                             </div>
                         </div>
                         <div class="transaction-right">
-                            <div class="transaction-amount expense">₹${amount.toLocaleString('en-IN')}</div>
+                            <div class="transaction-amount expense">${this.formatMoney(amount)}</div>
                         </div>
                     </div>
                 `;
@@ -349,7 +440,7 @@ class AnalyticsPage {
             if (percentage > 40) {
                 insights.push({
                     type: 'warning',
-                    message: `⚠️ ${category.charAt(0).toUpperCase() + category.slice(1)} accounts for ${percentage.toFixed(1)}% of your expenses. Consider reducing it.`
+                    message: `⚠️ ${BudgetUtils.escapeHTML(this.categoryLabel(category))} accounts for ${percentage.toFixed(1)}% of your expenses. Consider reducing it.`
                 });
             }
         });
@@ -369,7 +460,7 @@ class AnalyticsPage {
         if (totals.expense > totals.income) {
             insights.push({
                 type: 'danger',
-                message: `🚨 Alert: Your expenses (₹${totals.expense.toLocaleString('en-IN')}) exceed your income (₹${totals.income.toLocaleString('en-IN')})`
+                message: `🚨 Alert: Your expenses (${this.formatMoney(totals.expense)}) exceed your income (${this.formatMoney(totals.income)})`
             });
         }
 

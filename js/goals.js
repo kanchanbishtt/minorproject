@@ -4,12 +4,16 @@
 
 class GoalsPage {
     constructor() {
-        this.goals = this.loadFromStorage('goals') || [];
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.goals = BudgetUtils.loadGoals();
+        this.transactions = BudgetUtils.loadTransactions();
+        this.currency = BudgetUtils.loadCurrency();
+        this.dateFormat = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).dateFormat;
         this.init();
     }
 
     init() {
+        document.querySelector('label[for="goalAmount"]').textContent = `Target Amount (${this.currency})`;
+        this.setDeadlineMin();
         this.updateSummary();
         this.renderGoals();
         this.attachEventListeners();
@@ -27,7 +31,12 @@ class GoalsPage {
     attachEventListeners() {
         // Show/hide goal form
         document.getElementById('addGoalBtn').addEventListener('click', () => {
-            document.getElementById('goalFormContainer').style.display = 'block';
+            const formContainer = document.getElementById('goalFormContainer');
+            formContainer.style.display = 'block';
+            this.setDeadlineMin();
+            // On narrow screens the form opens below the summary cards, off-screen
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.getElementById('goalName').focus({ preventScroll: true });
         });
 
         document.getElementById('cancelGoalBtn').addEventListener('click', () => {
@@ -60,10 +69,10 @@ class GoalsPage {
         const completedGoals = this.goals.filter(g => g.completed);
         const totalSaved = completedGoals.reduce((sum, g) => sum + g.amount, 0);
 
-        document.getElementById('currentBalance').textContent = `₹${currentBalance.toLocaleString('en-IN')}`;
+        document.getElementById('currentBalance').textContent = BudgetUtils.formatMoney(currentBalance, this.currency);
         document.getElementById('activeGoalsCount').textContent = activeGoals.length;
         document.getElementById('completedGoalsCount').textContent = completedGoals.length;
-        document.getElementById('totalSaved').textContent = `₹${totalSaved.toLocaleString('en-IN')}`;
+        document.getElementById('totalSaved').textContent = BudgetUtils.formatMoney(totalSaved, this.currency);
     }
 
     addGoal() {
@@ -73,8 +82,18 @@ class GoalsPage {
         const category = document.getElementById('goalCategory').value;
         const description = document.getElementById('goalDescription').value.trim();
 
-        if (!name || !amount || !deadline) {
+        if (!name || !deadline) {
             alert('Please fill all required fields');
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            alert('Please enter a target amount greater than 0');
+            return;
+        }
+
+        if (deadline < BudgetUtils.toLocalISODate(new Date())) {
+            alert('Please choose a target date from today onwards');
             return;
         }
 
@@ -139,15 +158,25 @@ class GoalsPage {
 
     renderActiveGoals() {
         const container = document.getElementById('activeGoalsList');
-        const activeGoals = this.goals.filter(g => !g.completed);
-        const currentBalance = this.calculateBalance();
+        // Nearest deadline first (YYYY-MM-DD strings sort chronologically; sort is stable)
+        const activeGoals = this.goals
+            .filter(g => !g.completed)
+            .sort((a, b) => (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0));
 
         if (activeGoals.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No active goals. Create one to start saving!</p>';
             return;
         }
 
-        container.innerHTML = activeGoals.map(goal => this.createGoalHTML(goal, currentBalance)).join('');
+        // Share the balance out in deadline order: each goal is funded up to its target
+        // before the next gets anything, so goals never claim more money than exists
+        // and a negative balance funds nothing
+        let available = Math.max(this.calculateBalance(), 0);
+        container.innerHTML = activeGoals.map(goal => {
+            const saved = Math.min(available, Math.max(goal.amount, 0));
+            available -= saved;
+            return this.createGoalHTML(goal, saved);
+        }).join('');
 
         // Attach event listeners
         this.attachGoalHandlers(container);
@@ -156,49 +185,63 @@ class GoalsPage {
     renderCompletedGoals() {
         const container = document.getElementById('completedGoalsList');
         const completedGoals = this.goals.filter(g => g.completed);
-        const currentBalance = this.calculateBalance();
 
         if (completedGoals.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No completed goals yet.</p>';
             return;
         }
 
-        container.innerHTML = completedGoals.map(goal => this.createGoalHTML(goal, currentBalance)).join('');
+        // A completed goal is reached: show its full target as saved, not the live balance
+        container.innerHTML = completedGoals.map(goal => this.createGoalHTML(goal, Math.max(goal.amount, 0))).join('');
 
         // Attach event listeners
         this.attachGoalHandlers(container);
     }
 
-    createGoalHTML(goal, currentBalance) {
+    // Goals can only target today or later; refreshed whenever the form opens
+    // in case the page has stayed open past midnight
+    setDeadlineMin() {
+        document.getElementById('goalDeadline').min = BudgetUtils.toLocalISODate(new Date());
+    }
+
+    // Whole calendar days from today to the deadline, both as local dates, so the
+    // time of day cannot turn the due date into "Overdue by 0 days"
+    daysLeftText(deadline) {
+        const days = BudgetUtils.daysUntil(deadline);
+
+        if (days === 0) return 'Due today';
+        const count = Math.abs(days);
+        const unit = count === 1 ? 'day' : 'days';
+        return days > 0 ? `${count} ${unit} left` : `Overdue by ${count} ${unit}`;
+    }
+
+    // saved: the part of the balance counted toward this goal (0 to goal.amount)
+    createGoalHTML(goal, saved) {
         const categoryIcons = {
             savings: '💰', travel: '✈️', gadgets: '📱', education: '📚',
             investment: '📈', emergency: '🚨', other: '📦'
         };
 
         const icon = categoryIcons[goal.category] || '📦';
-        const percentage = Math.min((currentBalance / goal.amount) * 100, 100);
-        const remaining = Math.max(goal.amount - currentBalance, 0);
-        const deadlineText = new Date(goal.deadline).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
-
-        const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-        const daysLeftText = daysLeft > 0 ? `${daysLeft} days left` : `Overdue by ${Math.abs(daysLeft)} days`;
+        const percentage = goal.amount > 0 ? (saved / goal.amount) * 100 : 0;
+        const remaining = Math.max(goal.amount - saved, 0);
+        const deadlineText = BudgetUtils.escapeHTML(BudgetUtils.formatDate(goal.deadline, this.dateFormat));
+        const daysLeftText = this.daysLeftText(goal.deadline);
 
         return `
             <div class="goal-item ${goal.completed ? 'completed' : ''}">
                 <div class="goal-header">
                     <div class="goal-icon">${icon}</div>
                     <div class="goal-info">
-                        <h4>${goal.name}</h4>
-                        ${goal.description ? `<p class="goal-description">${goal.description}</p>` : ''}
-                        <p class="goal-meta">${goal.category} • Target: ${deadlineText}</p>
+                        <h4>${BudgetUtils.escapeHTML(goal.name)}</h4>
+                        ${goal.description ? `<p class="goal-description">${BudgetUtils.escapeHTML(goal.description)}</p>` : ''}
+                        <p class="goal-meta">${BudgetUtils.escapeHTML(goal.category)} • Target: ${deadlineText}</p>
                     </div>
                     <div class="goal-actions">
-                        <button class="btn-icon goal-complete" data-id="${goal.id}" title="${goal.completed ? 'Mark incomplete' : 'Mark complete'}">
+                        <button class="btn-icon goal-complete" data-id="${BudgetUtils.escapeHTML(goal.id)}" title="${goal.completed ? 'Mark incomplete' : 'Mark complete'}">
                             ${goal.completed ? '↩️' : '✓'}
                         </button>
-                        <button class="btn-icon goal-delete" data-id="${goal.id}" title="Delete">
+                        <button class="btn-icon goal-delete" data-id="${BudgetUtils.escapeHTML(goal.id)}" title="Delete">
                             🗑️
                         </button>
                     </div>
@@ -207,15 +250,15 @@ class GoalsPage {
                     <div class="goal-stats">
                         <div class="goal-stat">
                             <p class="stat-label">Target</p>
-                            <p class="stat-value">₹${goal.amount.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(goal.amount, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Current</p>
-                            <p class="stat-value">₹${currentBalance.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(saved, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Remaining</p>
-                            <p class="stat-value">₹${remaining.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(remaining, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Progress</p>

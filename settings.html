@@ -3,8 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- Only this site (and the CDN this page needs) may run scripts. style-src needs
+         'unsafe-inline' for the style attributes used in the markup. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Smart Budget Manager</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -36,7 +40,7 @@
                 <a href="Goals.html" class="nav-item">
                     <span>🎯</span> Goals
                 </a>
-                <a href="Settings.html" class="nav-item active">
+                <a href="settings.html" class="nav-item active">
                     <span>⚙️</span> Settings
                 </a>
             </nav>
@@ -109,6 +113,7 @@
                             <p>Choose how dates should be displayed</p>
                         </div>
                         <select id="dateFormatSelect" class="setting-select">
+                            <option value="D MMM YYYY">13 Oct 2026</option>
                             <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                             <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                             <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -185,7 +190,7 @@
                     <div class="setting-item">
                         <div class="setting-info">
                             <h4>Import Data</h4>
-                            <p>Import transactions from CSV file</p>
+                            <p>Add transactions from a CSV file, or restore a JSON backup</p>
                         </div>
                         <button class="btn-secondary" id="importBtn">📤 Import</button>
                     </div>
@@ -233,9 +238,10 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                    Select a CSV file containing your transactions
+                    Choose a CSV file of transactions (added to your data) or a JSON backup
+                    from Export All Data (replaces your data)
                 </p>
-                <input type="file" id="fileInput" accept=".csv" style="margin-bottom: 1rem;">
+                <input type="file" id="fileInput" accept=".csv,.json,text/csv,application/json" style="margin-bottom: 1rem;">
                 <button class="btn-primary" id="confirmImport">Import File</button>
             </div>
         </div>

@@ -82,7 +82,7 @@
 - Goal categories (Savings, Travel, Gadgets, Education, etc.)
 - Calculate remaining amount and days
 
-#### ⚙️ Settings Page (Settings.html)
+#### ⚙️ Settings Page (settings.html)
 
 - **Appearance:** Theme selection (Light/Dark)
 - **Currency & Format:** Choose currency symbol and date format
@@ -241,7 +241,7 @@ smart-budget-manager/
 ├── Transactions.html       # Transaction management page
 ├── Analytics.html          # Charts and analytics page
 ├── Goals.html              # Savings goals page
-├── Settings.html           # Settings and preferences page
+├── settings.html           # Settings and preferences page
 ├── css/
 │   └── styles.css         # Complete stylesheet with all page styles
 ├── js/
@@ -264,7 +264,7 @@ smart-budget-manager/
 - **Transactions.html** - Full transaction management with filters, sorting, and export
 - **Analytics.html** - 4 interactive charts with time-period filters and detailed analysis
 - **Goals.html** - Multiple savings goals with progress tracking
-- **Settings.html** - Comprehensive settings for customization and data management
+- **settings.html** - Comprehensive settings for customization and data management
 
 **CSS (css/styles.css)**
 
@@ -720,7 +720,7 @@ Built with ❤️ using vanilla JavaScript
 
 _Making personal finance simple, visual, and organized_
 
-🏠 [Dashboard](index.html) | 💳 [Transactions](Transactions.html) | 📈 [Analytics](Analytics.html) | 🎯 [Goals](Goals.html) | ⚙️ [Settings](Settings.html)
+🏠 [Dashboard](index.html) | 💳 [Transactions](Transactions.html) | 📈 [Analytics](Analytics.html) | 🎯 [Goals](Goals.html) | ⚙️ [Settings](settings.html)
 
 [⬆ Back to Top](#-smart-budget-manager)
 

@@ -4,13 +4,16 @@
 
 class TransactionsPage {
     constructor() {
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.transactions = BudgetUtils.loadTransactions();
+        this.currency = BudgetUtils.loadCurrency();
+        this.dateFormat = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).dateFormat;
         this.init();
     }
 
     init() {
+        document.querySelector('label[for="amount"]').textContent = `Amount (${this.currency})`;
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
         this.attachEventListeners();
         this.setDefaultDate();
     }
@@ -27,12 +30,18 @@ class TransactionsPage {
     attachEventListeners() {
         // Show/hide transaction form
         document.getElementById('addTransactionBtn').addEventListener('click', () => {
-            document.getElementById('transactionFormContainer').style.display = 'block';
+            const formContainer = document.getElementById('transactionFormContainer');
+            formContainer.style.display = 'block';
+            // On narrow screens the form opens below the summary cards, off-screen
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.getElementById('description').focus({ preventScroll: true });
         });
 
         document.getElementById('cancelTransactionBtn').addEventListener('click', () => {
             document.getElementById('transactionFormContainer').style.display = 'none';
             document.getElementById('transactionForm').reset();
+            // reset() blanks the date because its default is set from JS
+            this.setDefaultDate();
         });
 
         // Add transaction
@@ -42,10 +51,10 @@ class TransactionsPage {
         });
 
         // Filters
-        document.getElementById('searchInput').addEventListener('input', () => this.filterTransactions());
-        document.getElementById('filterType').addEventListener('change', () => this.filterTransactions());
-        document.getElementById('filterCategory').addEventListener('change', () => this.filterTransactions());
-        document.getElementById('filterSort').addEventListener('change', () => this.filterTransactions());
+        document.getElementById('searchInput').addEventListener('input', () => this.renderTransactions());
+        document.getElementById('filterType').addEventListener('change', () => this.renderTransactions());
+        document.getElementById('filterCategory').addEventListener('change', () => this.renderTransactions());
+        document.getElementById('filterSort').addEventListener('change', () => this.renderTransactions());
         document.getElementById('clearFilters').addEventListener('click', () => this.clearFilters());
 
         // Export
@@ -53,8 +62,12 @@ class TransactionsPage {
             document.getElementById('exportModal').classList.add('active');
         });
 
-        document.getElementById('closeModal').addEventListener('click', () => {
-            document.getElementById('exportModal').classList.remove('active');
+        document.getElementById('closeModal').addEventListener('click', () => this.closeExportModal());
+        document.getElementById('exportModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.closeExportModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeExportModal();
         });
 
         document.getElementById('exportCSV').addEventListener('click', () => this.exportCSV());
@@ -68,8 +81,13 @@ class TransactionsPage {
         const category = document.getElementById('category').value;
         const date = document.getElementById('date').value;
 
-        if (!description || !amount || !date) {
+        if (!description || !date) {
             alert('Please fill all fields');
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            alert('Please enter an amount greater than 0');
             return;
         }
 
@@ -93,7 +111,7 @@ class TransactionsPage {
 
         // Update UI
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
 
         this.showNotification(`Transaction added: ${description}`);
     }
@@ -106,7 +124,7 @@ class TransactionsPage {
 
         // Update UI
         this.updateSummary();
-        this.renderAllTransactions();
+        this.renderTransactions();
 
         this.showNotification('Transaction deleted');
     }
@@ -114,9 +132,9 @@ class TransactionsPage {
     updateSummary() {
         const totals = this.calculateTotals();
 
-        document.getElementById('totalIncome').textContent = `₹${totals.income.toLocaleString('en-IN')}`;
-        document.getElementById('totalExpense').textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
-        document.getElementById('balance').textContent = `₹${totals.balance.toLocaleString('en-IN')}`;
+        document.getElementById('totalIncome').textContent = BudgetUtils.formatMoney(totals.income, this.currency);
+        document.getElementById('totalExpense').textContent = BudgetUtils.formatMoney(totals.expense, this.currency);
+        document.getElementById('balance').textContent = BudgetUtils.formatMoney(totals.balance, this.currency);
         document.getElementById('totalTransactions').textContent = this.transactions.length;
     }
 
@@ -132,7 +150,9 @@ class TransactionsPage {
         return { income, expense, balance: income - expense };
     }
 
-    renderAllTransactions() {
+    // Single render path: always applies the current search, filters and sort,
+    // so adding or deleting a transaction keeps the user's view intact
+    renderTransactions() {
         const container = document.getElementById('allTransactionsList');
 
         if (this.transactions.length === 0) {
@@ -140,49 +160,6 @@ class TransactionsPage {
             return;
         }
 
-        container.innerHTML = this.transactions.map(t => this.createTransactionHTML(t)).join('');
-
-        // Attach delete handlers
-        container.querySelectorAll('.transaction-delete').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = parseInt(btn.dataset.id);
-                this.deleteTransaction(id);
-            });
-        });
-    }
-
-    createTransactionHTML(transaction) {
-        const categoryIcons = {
-            food: '🍔', transport: '🚗', shopping: '🛍️', bills: '💡',
-            entertainment: '🎬', health: '⚕️', education: '📚', salary: '💼', other: '📦'
-        };
-
-        const icon = categoryIcons[transaction.category] || '📦';
-        const sign = transaction.type === 'income' ? '+' : '-';
-        const formattedDate = new Date(transaction.date).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
-
-        return `
-            <div class="transaction-item ${transaction.type}">
-                <div class="transaction-left">
-                    <div class="transaction-icon">${icon}</div>
-                    <div class="transaction-details">
-                        <h4>${transaction.description}</h4>
-                        <p class="transaction-meta">${formattedDate} • ${transaction.category}</p>
-                    </div>
-                </div>
-                <div class="transaction-right">
-                    <div class="transaction-amount ${transaction.type}">
-                        ${sign}₹${transaction.amount.toLocaleString('en-IN')}
-                    </div>
-                    <button class="transaction-delete" data-id="${transaction.id}">🗑️ Delete</button>
-                </div>
-            </div>
-        `;
-    }
-
-    filterTransactions() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         const typeFilter = document.getElementById('filterType').value;
         const categoryFilter = document.getElementById('filterCategory').value;
@@ -208,10 +185,14 @@ class TransactionsPage {
             filtered = filtered.filter(t => t.category === categoryFilter);
         }
 
-        // Apply sorting
+        // Apply sorting. Date sorts break ties by id (creation time) so
+        // same-day entries keep a stable order.
+        const byDate = (a, b) =>
+            (BudgetUtils.parseLocalDate(a.date) - BudgetUtils.parseLocalDate(b.date)) || (a.id - b.id);
+
         switch (sortFilter) {
             case 'oldest':
-                filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+                filtered.sort(byDate);
                 break;
             case 'highest':
                 filtered.sort((a, b) => b.amount - a.amount);
@@ -221,18 +202,16 @@ class TransactionsPage {
                 break;
             case 'newest':
             default:
-                filtered.sort((a, b) => b.id - a.id);
+                filtered.sort((a, b) => byDate(b, a));
         }
 
         // Render filtered results
-        const container = document.getElementById('allTransactionsList');
-
         if (filtered.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No matching transactions found.</p>';
             return;
         }
 
-        container.innerHTML = filtered.map(t => this.createTransactionHTML(t)).join('');
+        container.innerHTML = filtered.map(t => BudgetUtils.transactionHTML(t, this.currency, this.dateFormat)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {
@@ -248,7 +227,11 @@ class TransactionsPage {
         document.getElementById('filterType').value = 'all';
         document.getElementById('filterCategory').value = 'all';
         document.getElementById('filterSort').value = 'newest';
-        this.renderAllTransactions();
+        this.renderTransactions();
+    }
+
+    closeExportModal() {
+        document.getElementById('exportModal').classList.remove('active');
     }
 
     exportCSV() {
@@ -257,29 +240,14 @@ class TransactionsPage {
             return;
         }
 
-        const headers = ['Date', 'Description', 'Type', 'Category', 'Amount'];
-        const rows = this.transactions.map(t => [
-            t.date,
-            t.description,
-            t.type,
-            t.category,
-            t.amount
-        ]);
-
-        let csvContent = headers.join(',') + '\n';
-        rows.forEach(row => {
-            csvContent += row.join(',') + '\n';
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
+        BudgetUtils.downloadFile(
+            BudgetUtils.transactionsToCSV(this.transactions),
+            `transactions-${BudgetUtils.toLocalISODate(new Date())}.csv`,
+            'text/csv;charset=utf-8'
+        );
 
         this.showNotification('CSV exported successfully!');
-        document.getElementById('exportModal').classList.remove('active');
+        this.closeExportModal();
     }
 
     exportJSON() {
@@ -288,21 +256,18 @@ class TransactionsPage {
             return;
         }
 
-        const jsonContent = JSON.stringify(this.transactions, null, 2);
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `transactions-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
+        BudgetUtils.downloadFile(
+            JSON.stringify(this.transactions, null, 2),
+            `transactions-${BudgetUtils.toLocalISODate(new Date())}.json`,
+            'application/json'
+        );
 
         this.showNotification('JSON exported successfully!');
-        document.getElementById('exportModal').classList.remove('active');
+        this.closeExportModal();
     }
 
     setDefaultDate() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = today;
+        document.getElementById('date').value = BudgetUtils.toLocalISODate(new Date());
     }
 
     showNotification(message) {
