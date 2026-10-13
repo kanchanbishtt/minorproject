@@ -181,10 +181,14 @@ class SettingsPage {
                     return;
                 }
 
+                // Cancelled, or nothing valid (the importer already said why): leave
+                // the dialog open so another file can be chosen
+                if (!summary) return;
+
                 document.getElementById('importModal').classList.remove('active');
                 fileInput.value = '';
 
-                this.showNotification(summary ? `Import complete: ${summary}.` : 'Data imported successfully!');
+                this.showNotification(`Import complete: ${summary}.`);
 
                 // Reload page to reflect changes
                 setTimeout(() => window.location.reload(), 1000);
