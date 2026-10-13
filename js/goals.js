@@ -139,15 +139,25 @@ class GoalsPage {
 
     renderActiveGoals() {
         const container = document.getElementById('activeGoalsList');
-        const activeGoals = this.goals.filter(g => !g.completed);
-        const currentBalance = this.calculateBalance();
+        // Nearest deadline first (YYYY-MM-DD strings sort chronologically; sort is stable)
+        const activeGoals = this.goals
+            .filter(g => !g.completed)
+            .sort((a, b) => (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0));
 
         if (activeGoals.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No active goals. Create one to start saving!</p>';
             return;
         }
 
-        container.innerHTML = activeGoals.map(goal => this.createGoalHTML(goal, currentBalance)).join('');
+        // Share the balance out in deadline order: each goal is funded up to its target
+        // before the next gets anything, so goals never claim more money than exists
+        // and a negative balance funds nothing
+        let available = Math.max(this.calculateBalance(), 0);
+        container.innerHTML = activeGoals.map(goal => {
+            const saved = Math.min(available, Math.max(goal.amount, 0));
+            available -= saved;
+            return this.createGoalHTML(goal, saved);
+        }).join('');
 
         // Attach event listeners
         this.attachGoalHandlers(container);
@@ -163,21 +173,24 @@ class GoalsPage {
             return;
         }
 
-        container.innerHTML = completedGoals.map(goal => this.createGoalHTML(goal, currentBalance)).join('');
+        container.innerHTML = completedGoals
+            .map(goal => this.createGoalHTML(goal, Math.min(Math.max(currentBalance, 0), Math.max(goal.amount, 0))))
+            .join('');
 
         // Attach event listeners
         this.attachGoalHandlers(container);
     }
 
-    createGoalHTML(goal, currentBalance) {
+    // saved: the part of the balance counted toward this goal (0 to goal.amount)
+    createGoalHTML(goal, saved) {
         const categoryIcons = {
             savings: '💰', travel: '✈️', gadgets: '📱', education: '📚',
             investment: '📈', emergency: '🚨', other: '📦'
         };
 
         const icon = categoryIcons[goal.category] || '📦';
-        const percentage = Math.min((currentBalance / goal.amount) * 100, 100);
-        const remaining = Math.max(goal.amount - currentBalance, 0);
+        const percentage = goal.amount > 0 ? (saved / goal.amount) * 100 : 0;
+        const remaining = Math.max(goal.amount - saved, 0);
         const deadlineText = new Date(goal.deadline).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
@@ -211,7 +224,7 @@ class GoalsPage {
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Current</p>
-                            <p class="stat-value">₹${currentBalance.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">₹${saved.toLocaleString('en-IN')}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Remaining</p>
