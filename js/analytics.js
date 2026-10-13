@@ -81,7 +81,7 @@ class AnalyticsPage {
         document.getElementById('totalExpense').textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
 
         // Calculate average daily spending
-        const days = this.calculateDays(filtered);
+        const days = this.calculatePeriodDays(filtered);
         const avgDaily = days > 0 ? totals.expense / days : 0;
         document.getElementById('avgDaily').textContent = `₹${avgDaily.toFixed(0).toLocaleString('en-IN')}`;
 
@@ -90,14 +90,26 @@ class AnalyticsPage {
         document.getElementById('savingsRate').textContent = `${savingsRate.toFixed(1)}%`;
     }
 
-    calculateDays(transactions) {
-        if (transactions.length === 0) return 0;
+    // Days the selected period has covered so far: from its start (or the first
+    // transaction, for All Time) to the later of today and the last transaction,
+    // capped at the period's end. Spending is averaged over these days.
+    calculatePeriodDays(transactions) {
+        const dates = transactions
+            .map(t => BudgetUtils.toLocalISODate(BudgetUtils.parseLocalDate(t.date)))
+            .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
+            .sort();
+        if (dates.length === 0) return 0;
 
-        const dates = transactions.map(t => new Date(t.date));
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-        const diff = maxDate - minDate;
-        return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+        const range = this.getPeriodRange();
+        const today = BudgetUtils.toLocalISODate(new Date());
+        const lastDate = dates[dates.length - 1];
+        const start = range ? range.start : dates[0];
+        let end = lastDate > today ? lastDate : today;
+        if (range && end > range.end) end = range.end;
+
+        // Round: a span crossing a DST change is not a whole number of 24h days
+        const msPerDay = 24 * 60 * 60 * 1000;
+        return Math.round((BudgetUtils.parseLocalDate(end) - BudgetUtils.parseLocalDate(start)) / msPerDay) + 1;
     }
 
     calculateTotals(transactions) {
