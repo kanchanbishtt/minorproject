@@ -74,6 +74,10 @@ class AnalyticsPage {
             this.renderAnalysis();
             this.generateInsights();
         });
+
+        // The theme toggle (app.js) switches a class on <body>; redraw charts in the new colours
+        new MutationObserver(() => this.renderCharts())
+            .observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 
     // Inclusive bounds of the selected period as local YYYY-MM-DD strings, or null for All Time
@@ -161,7 +165,16 @@ class AnalyticsPage {
         return { income, expense, balance: income - expense };
     }
 
+    // Chart.js draws text and grid lines on canvas, so CSS cannot restyle them:
+    // copy the current theme's colours into the Chart.js defaults before rendering
+    applyChartTheme() {
+        const styles = getComputedStyle(document.body);
+        Chart.defaults.color = styles.getPropertyValue('--text-secondary').trim();
+        Chart.defaults.borderColor = styles.getPropertyValue('--border-color').trim();
+    }
+
     renderCharts() {
+        this.applyChartTheme();
         this.renderIncomeExpenseChart();
         this.renderCategoryChart();
         this.renderMonthlyTrendChart();
