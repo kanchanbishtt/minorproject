@@ -2,12 +2,110 @@
    SMART BUDGET MANAGER - SHARED UTILITIES
    ================================ */
 
+// ========== SHARED HELPERS (used by every page script) ==========
+const BudgetUtils = {
+    // Symbols offered by the currency select on settings.html
+    SUPPORTED_CURRENCIES: ['₹', '$', '€', '£', '¥'],
+
+    CATEGORY_ICONS: {
+        food: '🍔', transport: '🚗', shopping: '🛍️', bills: '💡',
+        entertainment: '🎬', health: '⚕️', education: '📚', salary: '💼', other: '📦'
+    },
+
+    loadCurrency() {
+        const data = localStorage.getItem('settings');
+        const settings = (data && JSON.parse(data)) || {};
+        return BudgetUtils.SUPPORTED_CURRENCIES.includes(settings.currency) ? settings.currency : '₹';
+    },
+
+    formatMoney(amount, currency) {
+        const locale = currency === '₹' ? 'en-IN' : 'en-US';
+        const sign = amount < 0 ? '-' : '';
+        return `${sign}${currency}${Math.abs(amount).toLocaleString(locale)}`;
+    },
+
+    // Escape user-supplied text before inserting it into innerHTML
+    escapeHTML(value) {
+        const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(value).replace(/[&<>"']/g, ch => entities[ch]);
+    },
+
+    // YYYY-MM-DD in the user's local timezone (toISOString would give the UTC date)
+    toLocalISODate(date) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${date.getFullYear()}-${month}-${day}`;
+    },
+
+    // new Date('YYYY-MM-DD') is UTC midnight, which shows the previous day west of UTC
+    parseLocalDate(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+        return match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
+    },
+
+    // Markup for one row in a transactions list (dashboard and Transactions page)
+    transactionHTML(transaction, currency) {
+        const icon = BudgetUtils.CATEGORY_ICONS[transaction.category] || '📦';
+        const type = transaction.type === 'income' ? 'income' : 'expense';
+        const sign = type === 'income' ? '+' : '-';
+        const formattedDate = BudgetUtils.parseLocalDate(transaction.date).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric'
+        });
+
+        return `
+            <div class="transaction-item ${type}">
+                <div class="transaction-left">
+                    <div class="transaction-icon">${icon}</div>
+                    <div class="transaction-details">
+                        <h4>${BudgetUtils.escapeHTML(transaction.description)}</h4>
+                        <p class="transaction-meta">${formattedDate} • ${BudgetUtils.escapeHTML(transaction.category)}</p>
+                    </div>
+                </div>
+                <div class="transaction-right">
+                    <div class="transaction-amount ${type}">
+                        ${sign}${BudgetUtils.formatMoney(transaction.amount, currency)}
+                    </div>
+                    <button class="transaction-delete" data-id="${BudgetUtils.escapeHTML(transaction.id)}">🗑️ Delete</button>
+                </div>
+            </div>
+        `;
+    },
+
+    transactionsToCSV(transactions) {
+        const headers = ['Date', 'Description', 'Type', 'Category', 'Amount'];
+        const rows = transactions.map(t => [t.date, t.description, t.type, t.category, t.amount]);
+        const csv = [headers, ...rows]
+            .map(row => row.map(cell => BudgetUtils.toCSVCell(cell)).join(','))
+            .join('\r\n');
+        // BOM so Excel reads the file as UTF-8
+        return '﻿' + csv;
+    },
+
+    toCSVCell(value) {
+        let text = String(value ?? '');
+        // Stop spreadsheets from evaluating text cells as formulas
+        if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+    },
+
+    downloadFile(content, filename, mimeType) {
+        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+};
+
 // ========== SHARED BUDGET MANAGER ==========
 class BudgetManager {
     constructor() {
         this.transactions = this.loadFromStorage('transactions') || [];
         this.theme = this.loadFromStorage('theme') || 'light';
-        this.currency = this.loadCurrency();
+        this.currency = BudgetUtils.loadCurrency();
 
         this.init();
     }
@@ -30,18 +128,8 @@ class BudgetManager {
         return data ? JSON.parse(data) : null;
     }
 
-    // ========== CURRENCY ==========
-    // Symbols offered by the currency select on settings.html
-    loadCurrency() {
-        const supported = ['₹', '$', '€', '£', '¥'];
-        const settings = this.loadFromStorage('settings') || {};
-        return supported.includes(settings.currency) ? settings.currency : '₹';
-    }
-
     formatMoney(amount) {
-        const locale = this.currency === '₹' ? 'en-IN' : 'en-US';
-        const sign = amount < 0 ? '-' : '';
-        return `${sign}${this.currency}${Math.abs(amount).toLocaleString(locale)}`;
+        return BudgetUtils.formatMoney(amount, this.currency);
     }
 
     // ========== THEME ==========
@@ -127,23 +215,13 @@ class BudgetManager {
             return;
         }
 
-        const headers = ['Date', 'Description', 'Type', 'Category', 'Amount'];
-        const rows = this.transactions.map(t => [t.date, t.description, t.type, t.category, t.amount]);
-        const csv = [headers, ...rows]
-            .map(row => row.map(cell => this.toCSVCell(cell)).join(','))
-            .join('\r\n');
-
-        // BOM so Excel reads the file as UTF-8
-        this.downloadFile('﻿' + csv, `transactions-${this.toLocalISODate(new Date())}.csv`, 'text/csv;charset=utf-8');
+        BudgetUtils.downloadFile(
+            BudgetUtils.transactionsToCSV(this.transactions),
+            `transactions-${BudgetUtils.toLocalISODate(new Date())}.csv`,
+            'text/csv;charset=utf-8'
+        );
         this.closeExportModal();
         this.showNotification('CSV exported successfully!');
-    }
-
-    toCSVCell(value) {
-        let text = String(value ?? '');
-        // Stop spreadsheets from evaluating text cells as formulas
-        if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-        return `"${text.replace(/"/g, '""')}"`;
     }
 
     exportPDF() {
@@ -166,7 +244,7 @@ class BudgetManager {
         doc.text('Smart Budget Manager - Transactions', 14, y);
         doc.setFontSize(10);
         y += 7;
-        doc.text(`Generated on ${this.toLocalISODate(new Date())}`, 14, y);
+        doc.text(`Generated on ${BudgetUtils.toLocalISODate(new Date())}`, 14, y);
 
         doc.setFontSize(11);
         y += 10;
@@ -207,7 +285,7 @@ class BudgetManager {
             y += 7;
         });
 
-        doc.save(`transactions-${this.toLocalISODate(new Date())}.pdf`);
+        doc.save(`transactions-${BudgetUtils.toLocalISODate(new Date())}.pdf`);
         this.closeExportModal();
         this.showNotification('PDF exported successfully!');
     }
@@ -217,24 +295,6 @@ class BudgetManager {
         return this.currency === '₹'
             ? this.formatMoney(amount).replace('₹', 'Rs. ')
             : this.formatMoney(amount);
-    }
-
-    downloadFile(content, filename, mimeType) {
-        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 0);
-    }
-
-    // YYYY-MM-DD in the user's local timezone (toISOString would give the UTC date)
-    toLocalISODate(date) {
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${date.getFullYear()}-${month}-${day}`;
     }
 
     setupTransactionForm() {
@@ -345,7 +405,7 @@ class BudgetManager {
             return;
         }
 
-        container.innerHTML = recent.map(t => this.createTransactionHTML(t)).join('');
+        container.innerHTML = recent.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {
@@ -354,38 +414,6 @@ class BudgetManager {
                 this.deleteTransaction(id);
             });
         });
-    }
-
-    createTransactionHTML(transaction) {
-        const categoryIcons = {
-            food: '🍔', transport: '🚗', shopping: '🛍️', bills: '💡',
-            entertainment: '🎬', health: '⚕️', education: '📚', salary: '💼', other: '📦'
-        };
-
-        const icon = categoryIcons[transaction.category] || '📦';
-        const type = transaction.type === 'income' ? 'income' : 'expense';
-        const sign = type === 'income' ? '+' : '-';
-        const formattedDate = this.parseLocalDate(transaction.date).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
-
-        return `
-            <div class="transaction-item ${type}">
-                <div class="transaction-left">
-                    <div class="transaction-icon">${icon}</div>
-                    <div class="transaction-details">
-                        <h4>${this.escapeHTML(transaction.description)}</h4>
-                        <p class="transaction-meta">${formattedDate} • ${this.escapeHTML(transaction.category)}</p>
-                    </div>
-                </div>
-                <div class="transaction-right">
-                    <div class="transaction-amount ${type}">
-                        ${sign}${this.formatMoney(transaction.amount)}
-                    </div>
-                    <button class="transaction-delete" data-id="${this.escapeHTML(transaction.id)}">🗑️ Delete</button>
-                </div>
-            </div>
-        `;
     }
 
     updateGoalProgress(currentBalance) {
@@ -441,7 +469,7 @@ class BudgetManager {
             if (percentage > 40) {
                 insights.push({
                     type: 'warning',
-                    message: `⚠️ You're spending ${percentage.toFixed(1)}% of your expenses on ${this.escapeHTML(category)}. Consider reducing it.`
+                    message: `⚠️ You're spending ${percentage.toFixed(1)}% of your expenses on ${BudgetUtils.escapeHTML(category)}. Consider reducing it.`
                 });
             }
         });
@@ -478,22 +506,10 @@ class BudgetManager {
             .join('');
     }
 
-    // Escape user-supplied text before inserting it into innerHTML
-    escapeHTML(value) {
-        const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-        return String(value).replace(/[&<>"']/g, ch => entities[ch]);
-    }
-
-    // new Date('YYYY-MM-DD') is UTC midnight, which shows the previous day west of UTC
-    parseLocalDate(value) {
-        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-        return match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
-    }
-
     setDefaultDate() {
         const dateEl = document.getElementById('date');
         if (dateEl) {
-            dateEl.value = this.toLocalISODate(new Date());
+            dateEl.value = BudgetUtils.toLocalISODate(new Date());
         }
     }
 
