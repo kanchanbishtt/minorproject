@@ -164,6 +164,9 @@ body {
 /* ----- MAIN CONTENT ----- */
 .main-content {
     flex: 1;
+    /* A flex item defaults to min-width: auto and cannot shrink below its widest
+       content, which pushed whole pages wider than a phone screen */
+    min-width: 0;
     margin-left: 260px;
     padding: 2rem;
     max-width: 1400px;
@@ -309,6 +312,7 @@ body {
 
 .card-content {
     flex: 1;
+    min-width: 0;
 }
 
 .card-label {
@@ -321,6 +325,15 @@ body {
     font-size: 1.75rem;
     font-weight: 600;
     color: var(--text-primary);
+    /* last resort for extreme amounts; never push the card wider than the screen */
+    overflow-wrap: anywhere;
+}
+
+/* On the narrowest phones (320-380px) keep crore-sized amounts on one line */
+@media (max-width: 380px) {
+    .card-value {
+        font-size: 1.2rem;
+    }
 }
 
 .progress-bar {
@@ -684,8 +697,10 @@ body {
         display: flex;
     }
 
+    /* minmax(0, 1fr), not 1fr (= minmax(auto, 1fr)): the track must be able to
+       shrink below a chart canvas's current width so Chart.js can resize it */
     .charts-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -696,7 +711,7 @@ body {
     }
 
     .summary-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .form-row {
@@ -948,6 +963,21 @@ body {
     font-size: 1rem;
     min-width: 200px;
     transition: var(--transition);
+}
+
+/* On phones a label and a 200px control do not fit side by side: stack them.
+   Placed after the base rules so it wins at equal specificity. */
+@media (max-width: 768px) {
+    .setting-item {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .setting-select,
+    .setting-input {
+        min-width: 0;
+        width: 100%;
+    }
 }
 
 .setting-select:focus,
