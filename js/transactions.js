@@ -4,7 +4,7 @@
 
 class TransactionsPage {
     constructor() {
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.transactions = BudgetUtils.loadTransactions();
         this.currency = BudgetUtils.loadCurrency();
         this.init();
     }

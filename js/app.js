@@ -13,9 +13,7 @@ const BudgetUtils = {
     },
 
     loadCurrency() {
-        const data = localStorage.getItem('settings');
-        const settings = (data && JSON.parse(data)) || {};
-        return BudgetUtils.SUPPORTED_CURRENCIES.includes(settings.currency) ? settings.currency : '₹';
+        return BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).currency;
     },
 
     formatMoney(amount, currency) {
@@ -41,6 +39,113 @@ const BudgetUtils = {
     parseLocalDate(value) {
         const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
         return match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
+    },
+
+    // ----- Data validation: applied to imports and to everything read from storage,
+    // so one malformed row can never crash a page or corrupt the totals -----
+
+    TRANSACTION_TYPES: ['income', 'expense'],
+    DATE_FORMATS: ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'],
+    ALERT_THRESHOLDS: [50, 75, 80, 90],
+
+    // JSON from localStorage, or null if missing or unreadable
+    readStorage(key) {
+        try {
+            return JSON.parse(localStorage.getItem(key));
+        } catch (e) {
+            return null;
+        }
+    },
+
+    // A real calendar date in YYYY-MM-DD form (rejects e.g. 2026-02-30)
+    isISODate(value) {
+        if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+        return BudgetUtils.toLocalISODate(BudgetUtils.parseLocalDate(value)) === value;
+    },
+
+    // Positive amount from a number or plain numeric text ("500"), else null.
+    // Text must be converted: "0" + "500" concatenates instead of adding.
+    toAmount(value) {
+        let amount = NaN;
+        if (typeof value === 'number') amount = value;
+        else if (typeof value === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(value)) amount = Number(value);
+        return Number.isFinite(amount) && amount > 0 ? amount : null;
+    },
+
+    // Clean copy of a transaction, or null if it cannot be used
+    normalizeTransaction(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const amount = BudgetUtils.toAmount(raw.amount);
+        const description = typeof raw.description === 'string' ? raw.description.trim() : '';
+        const type = typeof raw.type === 'string' ? raw.type.trim().toLowerCase() : '';
+        const category = typeof raw.category === 'string' && raw.category.trim() ? raw.category.trim().toLowerCase() : 'other';
+        if (amount === null || !description || !BudgetUtils.TRANSACTION_TYPES.includes(type) || !BudgetUtils.isISODate(raw.date)) {
+            return null;
+        }
+        return { ...raw, description, amount, type, category };
+    },
+
+    // Clean copy of a savings goal, or null if it cannot be used
+    normalizeGoal(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+        const amount = BudgetUtils.toAmount(raw.amount);
+        if (!name || amount === null || !BudgetUtils.isISODate(raw.deadline)) return null;
+        return {
+            ...raw,
+            name,
+            amount,
+            category: typeof raw.category === 'string' && raw.category.trim() ? raw.category.trim() : 'other',
+            description: typeof raw.description === 'string' ? raw.description.trim() : '',
+            completed: raw.completed === true
+        };
+    },
+
+    // Settings with every field checked against what settings.html offers
+    normalizeSettings(raw) {
+        const s = raw && typeof raw === 'object' ? raw : {};
+        const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+        return {
+            theme: pick(s.theme, ['light', 'dark'], 'light'),
+            currency: pick(s.currency, BudgetUtils.SUPPORTED_CURRENCIES, '₹'),
+            dateFormat: pick(s.dateFormat, BudgetUtils.DATE_FORMATS, 'DD/MM/YYYY'),
+            monthlyBudget: Number.isFinite(s.monthlyBudget) && s.monthlyBudget >= 0 ? s.monthlyBudget : 0,
+            alertThreshold: pick(s.alertThreshold, BudgetUtils.ALERT_THRESHOLDS, 80),
+            budgetAlerts: typeof s.budgetAlerts === 'boolean' ? s.budgetAlerts : true,
+            goalReminders: typeof s.goalReminders === 'boolean' ? s.goalReminders : true
+        };
+    },
+
+    // Drops unusable rows and gives every row a unique integer id (delete and
+    // complete buttons look rows up by parseInt(id)). Earlier rows keep their ids.
+    normalizeList(list, normalizeItem) {
+        if (!Array.isArray(list)) return { items: [], skipped: 0 };
+        const items = [];
+        const seen = new Set();
+        let nextId = Date.now();
+        let skipped = 0;
+        for (const raw of list) {
+            const item = normalizeItem(raw);
+            if (!item) {
+                skipped++;
+                continue;
+            }
+            if (!Number.isSafeInteger(item.id) || seen.has(item.id)) {
+                while (seen.has(nextId)) nextId++;
+                item.id = nextId++;
+            }
+            seen.add(item.id);
+            items.push(item);
+        }
+        return { items, skipped };
+    },
+
+    loadTransactions() {
+        return BudgetUtils.normalizeList(BudgetUtils.readStorage('transactions'), BudgetUtils.normalizeTransaction).items;
+    },
+
+    loadGoals() {
+        return BudgetUtils.normalizeList(BudgetUtils.readStorage('goals'), BudgetUtils.normalizeGoal).items;
     },
 
     // Markup for one row in a transactions list (dashboard and Transactions page)
@@ -149,8 +254,8 @@ const BudgetUtils = {
 // ========== SHARED BUDGET MANAGER ==========
 class BudgetManager {
     constructor() {
-        this.transactions = this.loadFromStorage('transactions') || [];
-        this.theme = this.loadFromStorage('theme') || 'light';
+        this.transactions = BudgetUtils.loadTransactions();
+        this.theme = BudgetUtils.readStorage('theme') === 'dark' ? 'dark' : 'light';
         this.currency = BudgetUtils.loadCurrency();
 
         this.init();
@@ -470,7 +575,7 @@ class BudgetManager {
         if (!progressEl || !progressBarEl) return;
 
         // Goals are created on the Goals page (js/goals.js)
-        const goals = this.loadFromStorage('goals') || [];
+        const goals = BudgetUtils.loadGoals();
         const activeGoals = goals.filter(g => !g.completed && g.amount > 0);
 
         if (activeGoals.length === 0) {

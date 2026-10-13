@@ -4,9 +4,9 @@
 
 class SettingsPage {
     constructor() {
-        this.settings = this.loadFromStorage('settings') || this.getDefaultSettings();
-        this.transactions = this.loadFromStorage('transactions') || [];
-        this.goals = this.loadFromStorage('goals') || [];
+        this.settings = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings'));
+        this.transactions = BudgetUtils.loadTransactions();
+        this.goals = BudgetUtils.loadGoals();
         this.init();
     }
 
@@ -16,15 +16,7 @@ class SettingsPage {
     }
 
     getDefaultSettings() {
-        return {
-            theme: 'light',
-            currency: '₹',
-            dateFormat: 'DD/MM/YYYY',
-            monthlyBudget: 0,
-            alertThreshold: 80,
-            budgetAlerts: true,
-            goalReminders: true
-        };
+        return BudgetUtils.normalizeSettings({});
     }
 
     loadFromStorage(key) {
@@ -172,11 +164,12 @@ class SettingsPage {
             try {
                 const content = e.target.result;
 
-                // Check if it's CSV
-                if (file.name.endsWith('.csv')) {
-                    this.importCSV(content);
-                } else if (file.name.endsWith('.json')) {
-                    this.importJSON(content);
+                const name = file.name.toLowerCase();
+                let summary;
+                if (name.endsWith('.csv')) {
+                    summary = this.importCSV(content);
+                } else if (name.endsWith('.json')) {
+                    summary = this.importJSON(content);
                 } else {
                     alert('Unsupported file format. Please use CSV or JSON.');
                     return;
@@ -185,7 +178,7 @@ class SettingsPage {
                 document.getElementById('importModal').classList.remove('active');
                 fileInput.value = '';
 
-                this.showNotification('Data imported successfully!');
+                this.showNotification(summary ? `Import complete: ${summary}.` : 'Data imported successfully!');
 
                 // Reload page to reflect changes
                 setTimeout(() => window.location.reload(), 1000);
@@ -199,63 +192,70 @@ class SettingsPage {
 
     importCSV(content) {
         // Row 0 is the export header: Date, Description, Type, Category, Amount
-        const rows = BudgetUtils.parseCSV(content);
-        const transactions = [];
+        const rows = BudgetUtils.parseCSV(content)
+            .slice(1)
+            .filter(row => row.some(cell => cell.trim() !== ''));
+        const parsed = rows.map(row => {
+            const v = row.map(cell => BudgetUtils.fromCSVCell(cell.trim()));
+            return { date: v[0], description: v[1], type: v[2], category: v[3], amount: v[4], timestamp: new Date().toISOString() };
+        });
+        return this.mergeTransactions(parsed, 'the CSV file');
+    }
 
-        for (let i = 1; i < rows.length; i++) {
-            const values = rows[i].map(v => BudgetUtils.fromCSVCell(v.trim()));
+    // Validates imported rows with the same rules as the app's forms, asks before
+    // adding them, and returns a summary, or null when nothing was imported
+    mergeTransactions(rows, source) {
+        const valid = rows.map(BudgetUtils.normalizeTransaction).filter(Boolean);
+        const skipped = rows.length - valid.length;
 
-            if (values.length >= 5) {
-                const transaction = {
-                    id: Date.now() + i,
-                    date: values[0],
-                    description: values[1],
-                    type: values[2].toLowerCase(),
-                    category: values[3].toLowerCase(),
-                    amount: parseFloat(values[4]),
-                    timestamp: new Date().toISOString()
-                };
-
-                if (transaction.description && transaction.amount) {
-                    transactions.push(transaction);
-                }
-            }
+        if (valid.length === 0) {
+            alert(`No valid transactions found in ${source}.`);
+            return null;
         }
 
-        if (transactions.length > 0) {
-            if (confirm(`Import ${transactions.length} transactions? This will add them to existing data.`)) {
-                this.transactions = [...this.transactions, ...transactions];
-                this.saveToStorage('transactions', this.transactions);
-            }
-        } else {
-            alert('No valid transactions found in the CSV file.');
+        const skippedNote = skipped ? ` (${skipped} invalid row${skipped === 1 ? '' : 's'} will be skipped)` : '';
+        if (!confirm(`Import ${valid.length} transactions${skippedNote}? They will be added to your existing data.`)) {
+            return null;
         }
+
+        // Existing rows keep their ids; imported rows get fresh unique ones
+        const imported = valid.map(t => ({ ...t, id: undefined }));
+        this.transactions = BudgetUtils.normalizeList([...this.transactions, ...imported], BudgetUtils.normalizeTransaction).items;
+        this.saveToStorage('transactions', this.transactions);
+        return `${valid.length} imported, ${skipped} skipped`;
     }
 
     importJSON(content) {
         const data = JSON.parse(content);
 
-        // Check if it's a full backup
-        if (data.transactions && data.goals) {
-            if (confirm('This will replace all your existing data. Continue?')) {
-                this.transactions = data.transactions || [];
-                this.goals = data.goals || [];
-                this.settings = data.settings || this.getDefaultSettings();
+        // Full backup (from Export All Data): replaces everything
+        if (data && typeof data === 'object' && Array.isArray(data.transactions) && Array.isArray(data.goals)) {
+            const transactions = BudgetUtils.normalizeList(data.transactions, BudgetUtils.normalizeTransaction);
+            const goals = BudgetUtils.normalizeList(data.goals, BudgetUtils.normalizeGoal);
+            const skipped = transactions.skipped + goals.skipped;
+            const skippedNote = skipped ? ` ${skipped} invalid entr${skipped === 1 ? 'y' : 'ies'} will be skipped.` : '';
 
-                this.saveToStorage('transactions', this.transactions);
-                this.saveToStorage('goals', this.goals);
-                this.saveToStorage('settings', this.settings);
+            if (!confirm(`This will replace all your existing data with ${transactions.items.length} transactions and ${goals.items.length} goals.${skippedNote} Continue?`)) {
+                return null;
             }
+
+            this.transactions = transactions.items;
+            this.goals = goals.items;
+            this.settings = BudgetUtils.normalizeSettings(data.settings);
+
+            this.saveToStorage('transactions', this.transactions);
+            this.saveToStorage('goals', this.goals);
+            this.saveToStorage('settings', this.settings);
+            return `${transactions.items.length} transactions and ${goals.items.length} goals restored, ${skipped} skipped`;
         }
-        // Otherwise treat as transactions array
-        else if (Array.isArray(data)) {
-            if (confirm(`Import ${data.length} transactions? This will add them to existing data.`)) {
-                this.transactions = [...this.transactions, ...data];
-                this.saveToStorage('transactions', this.transactions);
-            }
-        } else {
-            alert('Invalid JSON format.');
+
+        // Otherwise treat as a transactions array
+        if (Array.isArray(data)) {
+            return this.mergeTransactions(data, 'the JSON file');
         }
+
+        alert('Invalid JSON format.');
+        return null;
     }
 
     clearAllData() {

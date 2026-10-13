@@ -4,8 +4,8 @@
 
 class GoalsPage {
     constructor() {
-        this.goals = this.loadFromStorage('goals') || [];
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.goals = BudgetUtils.loadGoals();
+        this.transactions = BudgetUtils.loadTransactions();
         this.currency = BudgetUtils.loadCurrency();
         this.init();
     }

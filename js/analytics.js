@@ -13,7 +13,7 @@ const EXTRA_CATEGORY_COLORS = ['#F06292', '#7986CB', '#AED581', '#FFB74D', '#4DB
 
 class AnalyticsPage {
     constructor() {
-        this.transactions = this.loadFromStorage('transactions') || [];
+        this.transactions = BudgetUtils.loadTransactions();
         this.currency = BudgetUtils.loadCurrency();
         this.categoryChartInstance = null;
         this.incomeExpenseChartInstance = null;
