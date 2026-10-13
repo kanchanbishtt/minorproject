@@ -2,6 +2,15 @@
    ANALYTICS PAGE LOGIC
    ================================ */
 
+// One fixed colour per category, so a category looks the same in every chart
+const CATEGORY_COLORS = {
+    food: '#FF6384', transport: '#36A2EB', shopping: '#FFCE56', bills: '#4BC0C0',
+    entertainment: '#9966FF', health: '#FF9F40', education: '#8BC34A', salary: '#00ACC1',
+    other: '#A1887F'
+};
+// Handed out in order to categories not listed above (e.g. from imported files)
+const EXTRA_CATEGORY_COLORS = ['#F06292', '#7986CB', '#AED581', '#FFB74D', '#4DB6AC', '#BA68C8'];
+
 class AnalyticsPage {
     constructor() {
         this.transactions = this.loadFromStorage('transactions') || [];
@@ -10,6 +19,7 @@ class AnalyticsPage {
         this.incomeExpenseChartInstance = null;
         this.monthlyTrendChartInstance = null;
         this.topCategoriesChartInstance = null;
+        this.extraCategoryColors = new Map();
         this.init();
     }
 
@@ -39,6 +49,15 @@ class AnalyticsPage {
                 label: ctx => `${labelByDataset ? ctx.dataset.label : ctx.label}: ${this.formatMoney(ctx.raw)}`
             }
         };
+    }
+
+    categoryColor(category) {
+        if (CATEGORY_COLORS[category]) return CATEGORY_COLORS[category];
+        if (!this.extraCategoryColors.has(category)) {
+            const next = EXTRA_CATEGORY_COLORS[this.extraCategoryColors.size % EXTRA_CATEGORY_COLORS.length];
+            this.extraCategoryColors.set(category, next);
+        }
+        return this.extraCategoryColors.get(category);
     }
 
     // Display name for a stored category key ("food" -> "Food"). Plain text:
@@ -206,10 +225,7 @@ class AnalyticsPage {
                 labels: labels.map(l => this.categoryLabel(l)),
                 datasets: [{
                     data: data,
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0'
-                    ]
+                    backgroundColor: labels.map(l => this.categoryColor(l))
                 }]
             },
             options: {
@@ -320,7 +336,7 @@ class AnalyticsPage {
                 datasets: [{
                     label: `Amount (${this.currency})`,
                     data: data,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                    backgroundColor: sorted.map(([cat]) => this.categoryColor(cat))
                 }]
             },
             options: {
