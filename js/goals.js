@@ -29,7 +29,11 @@ class GoalsPage {
     attachEventListeners() {
         // Show/hide goal form
         document.getElementById('addGoalBtn').addEventListener('click', () => {
-            document.getElementById('goalFormContainer').style.display = 'block';
+            const formContainer = document.getElementById('goalFormContainer');
+            formContainer.style.display = 'block';
+            // On narrow screens the form opens below the summary cards, off-screen
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.getElementById('goalName').focus({ preventScroll: true });
         });
 
         document.getElementById('cancelGoalBtn').addEventListener('click', () => {
