@@ -375,7 +375,7 @@ class BudgetManager {
         const icon = categoryIcons[transaction.category] || '📦';
         const type = transaction.type === 'income' ? 'income' : 'expense';
         const sign = type === 'income' ? '+' : '-';
-        const formattedDate = new Date(transaction.date).toLocaleDateString('en-IN', {
+        const formattedDate = this.parseLocalDate(transaction.date).toLocaleDateString('en-IN', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
 
@@ -494,11 +494,16 @@ class BudgetManager {
         return String(value).replace(/[&<>"']/g, ch => entities[ch]);
     }
 
+    // new Date('YYYY-MM-DD') is UTC midnight, which shows the previous day west of UTC
+    parseLocalDate(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+        return match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
+    }
+
     setDefaultDate() {
         const dateEl = document.getElementById('date');
         if (dateEl) {
-            const today = new Date().toISOString().split('T')[0];
-            dateEl.value = today;
+            dateEl.value = this.toLocalISODate(new Date());
         }
     }
 
