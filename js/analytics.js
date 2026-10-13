@@ -66,8 +66,11 @@ class AnalyticsPage {
         const iso = date => BudgetUtils.toLocalISODate(date);
 
         switch (period) {
-            case 'week':
-                return { start: iso(new Date(year, month, today.getDate() - 6)), end: iso(today) };
+            case 'week': {
+                // Calendar week, Monday to Sunday (getDay() is 0 for Sunday)
+                const monday = today.getDate() - ((today.getDay() + 6) % 7);
+                return { start: iso(new Date(year, month, monday)), end: iso(new Date(year, month, monday + 6)) };
+            }
             case 'month':
                 return { start: iso(new Date(year, month, 1)), end: iso(new Date(year, month + 1, 0)) };
             case 'year':
