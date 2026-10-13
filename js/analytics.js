@@ -26,6 +26,13 @@ class AnalyticsPage {
         return data ? JSON.parse(data) : null;
     }
 
+    // Display name for a stored category key ("food" -> "Food"). Plain text:
+    // escape it before putting it into innerHTML.
+    categoryLabel(category) {
+        const text = String(category);
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
     attachEventListeners() {
         document.getElementById('timePeriod').addEventListener('change', () => {
             this.updateSummary();
@@ -159,7 +166,7 @@ class AnalyticsPage {
         this.categoryChartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                labels: labels.map(l => this.categoryLabel(l)),
                 datasets: [{
                     data: data,
                     backgroundColor: [
@@ -259,7 +266,7 @@ class AnalyticsPage {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
 
-        const labels = sorted.map(([cat]) => cat.charAt(0).toUpperCase() + cat.slice(1));
+        const labels = sorted.map(([cat]) => this.categoryLabel(cat));
         const data = sorted.map(([, amount]) => amount);
 
         if (this.topCategoriesChartInstance) {
@@ -311,7 +318,7 @@ class AnalyticsPage {
                     <div class="transaction-item">
                         <div class="transaction-left">
                             <div class="transaction-details">
-                                <h4>${category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                                <h4>${BudgetUtils.escapeHTML(this.categoryLabel(category))}</h4>
                                 <p class="transaction-meta">${percentage.toFixed(1)}% of total expenses</p>
                             </div>
                         </div>
@@ -351,7 +358,7 @@ class AnalyticsPage {
             if (percentage > 40) {
                 insights.push({
                     type: 'warning',
-                    message: `⚠️ ${category.charAt(0).toUpperCase() + category.slice(1)} accounts for ${percentage.toFixed(1)}% of your expenses. Consider reducing it.`
+                    message: `⚠️ ${BudgetUtils.escapeHTML(this.categoryLabel(category))} accounts for ${percentage.toFixed(1)}% of your expenses. Consider reducing it.`
                 });
             }
         });
