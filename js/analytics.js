@@ -13,11 +13,12 @@ class AnalyticsPage {
     }
 
     init() {
+        // Wire controls first so a rendering error cannot leave them dead
+        this.attachEventListeners();
         this.updateSummary();
         this.renderCharts();
         this.renderAnalysis();
         this.generateInsights();
-        this.attachEventListeners();
     }
 
     loadFromStorage(key) {
@@ -266,7 +267,8 @@ class AnalyticsPage {
         }
 
         this.topCategoriesChartInstance = new Chart(ctx, {
-            type: 'horizontalBar',
+            // Chart.js v3+ removed 'horizontalBar'; indexAxis: 'y' makes this bar chart horizontal
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
