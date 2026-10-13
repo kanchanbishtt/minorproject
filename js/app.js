@@ -140,6 +140,18 @@ const BudgetUtils = {
         return { items, skipped };
     },
 
+    // This calendar month's spending against the monthly budget, or null when no
+    // budget is set. Dates are validated YYYY-MM-DD strings, so the month is their prefix.
+    budgetStatus(transactions, settings) {
+        if (!(settings.monthlyBudget > 0)) return null;
+        const month = BudgetUtils.toLocalISODate(new Date()).slice(0, 7);
+        const spent = transactions
+            .filter(t => t.type === 'expense' && t.date.slice(0, 7) === month)
+            .reduce((sum, t) => sum + t.amount, 0);
+        const percentage = (spent / settings.monthlyBudget) * 100;
+        return { spent, budget: settings.monthlyBudget, percentage, alert: percentage >= settings.alertThreshold };
+    },
+
     loadTransactions() {
         return BudgetUtils.normalizeList(BudgetUtils.readStorage('transactions'), BudgetUtils.normalizeTransaction).items;
     },
@@ -618,6 +630,18 @@ class BudgetManager {
             .forEach(t => {
                 categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
             });
+
+        // Monthly budget (set on the Settings page)
+        const settings = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings'));
+        const budget = BudgetUtils.budgetStatus(this.transactions, settings);
+        if (settings.budgetAlerts && budget && budget.alert) {
+            insights.push({
+                type: budget.percentage >= 100 ? 'danger' : 'warning',
+                message: budget.percentage >= 100
+                    ? `🚨 Monthly budget exceeded: you've spent ${this.formatMoney(budget.spent)} of your ${this.formatMoney(budget.budget)} budget.`
+                    : `⚠️ Monthly budget: you've spent ${this.formatMoney(budget.spent)} (${budget.percentage.toFixed(1)}%) of your ${this.formatMoney(budget.budget)} budget.`
+            });
+        }
 
         // Overspending warnings
         Object.entries(categoryTotals).forEach(([category, amount]) => {

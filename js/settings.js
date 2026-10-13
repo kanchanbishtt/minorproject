@@ -114,25 +114,12 @@ class SettingsPage {
     }
 
     checkBudgetAlert() {
-        if (!this.settings.budgetAlerts || this.settings.monthlyBudget === 0) return;
+        if (!this.settings.budgetAlerts) return;
+        const status = BudgetUtils.budgetStatus(this.transactions, this.settings);
+        if (!status || !status.alert) return;
 
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-
-        const monthlyExpenses = this.transactions
-            .filter(t => {
-                const date = new Date(t.date);
-                return t.type === 'expense' &&
-                    date.getMonth() === currentMonth &&
-                    date.getFullYear() === currentYear;
-            })
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        const percentage = (monthlyExpenses / this.settings.monthlyBudget) * 100;
-
-        if (percentage >= this.settings.alertThreshold) {
-            alert(`⚠️ Budget Alert: You've spent ₹${monthlyExpenses.toLocaleString('en-IN')} (${percentage.toFixed(1)}%) of your monthly budget of ₹${this.settings.monthlyBudget.toLocaleString('en-IN')}`);
-        }
+        const money = amount => BudgetUtils.formatMoney(amount, this.settings.currency);
+        alert(`⚠️ Budget Alert: You've spent ${money(status.spent)} (${status.percentage.toFixed(1)}%) of your monthly budget of ${money(status.budget)}`);
     }
 
     exportAllData() {
