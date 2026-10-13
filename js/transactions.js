@@ -28,7 +28,11 @@ class TransactionsPage {
     attachEventListeners() {
         // Show/hide transaction form
         document.getElementById('addTransactionBtn').addEventListener('click', () => {
-            document.getElementById('transactionFormContainer').style.display = 'block';
+            const formContainer = document.getElementById('transactionFormContainer');
+            formContainer.style.display = 'block';
+            // On narrow screens the form opens below the summary cards, off-screen
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.getElementById('description').focus({ preventScroll: true });
         });
 
         document.getElementById('cancelTransactionBtn').addEventListener('click', () => {
