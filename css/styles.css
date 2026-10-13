@@ -751,6 +751,30 @@ body {
     border-radius: 10px;
 }
 
+/* ----- TOAST (non-blocking notices) ----- */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translate(-50%, 1rem);
+    max-width: calc(100% - 2rem);
+    padding: 0.75rem 1.25rem;
+    /* inverted surface: dark on light theme, light on dark theme */
+    background: var(--text-primary);
+    color: var(--surface-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 3000;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 /* ----- ANIMATIONS ----- */
 @keyframes fadeIn {
     from {

@@ -272,6 +272,46 @@ const BudgetUtils = {
         return rows;
     },
 
+    // ----- Non-blocking notices -----
+    toastTimer: null,
+
+    // Brief notice at the bottom of the screen; role="status" so screen readers announce it
+    showToast(message) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = 'toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(BudgetUtils.toastTimer);
+        BudgetUtils.toastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
+    },
+
+    // Show a notice on the next page load, for actions that reload the page
+    flashToast(message) {
+        try {
+            sessionStorage.setItem('budget-flash', message);
+        } catch (e) {
+            // storage unavailable: the notice is skipped, the action itself already happened
+        }
+    },
+
+    showFlashToast() {
+        let message = null;
+        try {
+            message = sessionStorage.getItem('budget-flash');
+            sessionStorage.removeItem('budget-flash');
+        } catch (e) {
+            return;
+        }
+        if (message) BudgetUtils.showToast(message);
+    },
+
     downloadFile(content, filename, mimeType) {
         const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
         const link = document.createElement('a');
@@ -298,6 +338,7 @@ class BudgetManager {
     // Initialize app
     init() {
         this.applyTheme();
+        BudgetUtils.showFlashToast();
         this.setupMobileMenu();
         this.setupThemeToggle();
         this.setupDashboard();

@@ -173,10 +173,9 @@ class SettingsPage {
                 document.getElementById('importModal').classList.remove('active');
                 fileInput.value = '';
 
-                this.showNotification(`Import complete: ${summary}.`);
-
-                // Reload page to reflect changes
-                setTimeout(() => window.location.reload(), 1000);
+                // Reload to reflect the new data; the notice shows after the reload
+                BudgetUtils.flashToast(`Import complete: ${summary}.`);
+                window.location.reload();
             } catch (error) {
                 alert('Error importing file: ' + error.message);
             }
@@ -259,16 +258,16 @@ class SettingsPage {
 
         if (confirmation === 'DELETE') {
             localStorage.clear();
-            alert('All data has been cleared. The page will now reload.');
+            BudgetUtils.flashToast('All data has been cleared.');
             window.location.reload();
         } else {
             this.showNotification('Data deletion cancelled.');
         }
     }
 
+    // Success messages: non-blocking notice (warnings and errors still use dialogs)
     showNotification(message) {
-        alert(message);
-        console.log('Notification:', message);
+        BudgetUtils.showToast(message);
     }
 }
 
