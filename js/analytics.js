@@ -211,7 +211,7 @@ class AnalyticsPage {
         // Group by month
         const monthlyData = {};
         filtered.forEach(t => {
-            const date = new Date(t.date);
+            const date = BudgetUtils.parseLocalDate(t.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
             if (!monthlyData[monthKey]) {
