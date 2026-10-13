@@ -292,7 +292,12 @@ class BudgetManager {
     }
 
     toggleTheme() {
-        this.theme = this.theme === 'light' ? 'dark' : 'light';
+        this.setTheme(this.theme === 'light' ? 'dark' : 'light');
+    }
+
+    // The single way to change the theme (header toggle and the Settings dropdown)
+    setTheme(theme) {
+        this.theme = theme === 'dark' ? 'dark' : 'light';
         this.applyTheme();
         this.saveToStorage('theme', this.theme);
     }

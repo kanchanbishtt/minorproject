@@ -29,6 +29,8 @@ class SettingsPage {
     }
 
     loadSettings() {
+        // The stored 'theme' (shared with the header toggle) is the source of truth
+        this.settings.theme = BudgetUtils.readStorage('theme') === 'dark' ? 'dark' : 'light';
         document.getElementById('themeSelect').value = this.settings.theme;
         document.getElementById('currencySelect').value = this.settings.currency;
         document.getElementById('dateFormatSelect').value = this.settings.dateFormat;
@@ -39,15 +41,20 @@ class SettingsPage {
     }
 
     attachEventListeners() {
-        // Theme select
+        // Theme select: applies immediately, like the header toggle
         document.getElementById('themeSelect').addEventListener('change', (e) => {
-            const theme = e.target.value;
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-            } else {
-                document.body.classList.remove('dark-theme');
-            }
+            this.setTheme(e.target.value);
         });
+
+        // The header toggle switches a class on <body>; keep the dropdown in step
+        new MutationObserver(() => {
+            const theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+            document.getElementById('themeSelect').value = theme;
+            if (this.settings.theme !== theme) {
+                this.settings.theme = theme;
+                this.saveToStorage('settings', this.settings);
+            }
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
         // Save settings
         document.getElementById('saveSettingsBtn').addEventListener('click', () => {
@@ -78,6 +85,14 @@ class SettingsPage {
         });
     }
 
+    // Goes through BudgetManager.setTheme so the stored theme, the header toggle
+    // and this dropdown never disagree
+    setTheme(theme) {
+        window.budgetApp.setTheme(theme);
+        this.settings.theme = window.budgetApp.theme;
+        this.saveToStorage('settings', this.settings);
+    }
+
     saveSettings() {
         this.settings = {
             theme: document.getElementById('themeSelect').value,
@@ -90,16 +105,7 @@ class SettingsPage {
         };
 
         this.saveToStorage('settings', this.settings);
-
-        // Apply theme
-        const theme = this.settings.theme;
-        this.saveToStorage('theme', theme);
-
-        if (theme === 'dark') {
-            document.body.classList.add('dark-theme');
-        } else {
-            document.body.classList.remove('dark-theme');
-        }
+        window.budgetApp.setTheme(this.settings.theme);
 
         this.showNotification('Settings saved successfully!');
 
@@ -246,6 +252,7 @@ class SettingsPage {
             this.saveToStorage('transactions', this.transactions);
             this.saveToStorage('goals', this.goals);
             this.saveToStorage('settings', this.settings);
+            this.saveToStorage('theme', this.settings.theme);
             return `${transactions.items.length} transactions and ${goals.items.length} goals restored, ${skipped} skipped`;
         }
 
