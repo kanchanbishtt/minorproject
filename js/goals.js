@@ -177,16 +177,14 @@ class GoalsPage {
     renderCompletedGoals() {
         const container = document.getElementById('completedGoalsList');
         const completedGoals = this.goals.filter(g => g.completed);
-        const currentBalance = this.calculateBalance();
 
         if (completedGoals.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No completed goals yet.</p>';
             return;
         }
 
-        container.innerHTML = completedGoals
-            .map(goal => this.createGoalHTML(goal, Math.min(Math.max(currentBalance, 0), Math.max(goal.amount, 0))))
-            .join('');
+        // A completed goal is reached: show its full target as saved, not the live balance
+        container.innerHTML = completedGoals.map(goal => this.createGoalHTML(goal, Math.max(goal.amount, 0))).join('');
 
         // Attach event listeners
         this.attachGoalHandlers(container);
