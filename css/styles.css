@@ -447,6 +447,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     padding: 1rem;
     background: var(--bg-color);
     border-radius: var(--radius-sm);
@@ -467,10 +468,17 @@ body {
     border-left-color: var(--danger-color);
 }
 
+/* The left side shrinks (description wraps) so the amount column never has to */
 .transaction-left {
     display: flex;
     align-items: center;
     gap: 1rem;
+    min-width: 0;
+}
+
+.transaction-details {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .transaction-icon {
@@ -496,12 +504,14 @@ body {
 
 .transaction-right {
     text-align: right;
+    flex-shrink: 0;
 }
 
 .transaction-amount {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
+    white-space: nowrap;
 }
 
 .transaction-amount.income {
@@ -521,6 +531,7 @@ body {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     transition: var(--transition);
+    white-space: nowrap;
 }
 
 .transaction-delete:hover {
@@ -690,6 +701,10 @@ body {
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .transaction-amount {
+        font-size: 1.05rem;
     }
 
     .filters-bar {
