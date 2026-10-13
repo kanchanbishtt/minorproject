@@ -45,7 +45,8 @@ const BudgetUtils = {
     // so one malformed row can never crash a page or corrupt the totals -----
 
     TRANSACTION_TYPES: ['income', 'expense'],
-    DATE_FORMATS: ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'],
+    // 'D MMM YYYY' (13 Oct 2026) is the default and matches the original display
+    DATE_FORMATS: ['D MMM YYYY', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'],
     ALERT_THRESHOLDS: [50, 75, 80, 90],
 
     // JSON from localStorage, or null if missing or unreadable
@@ -108,7 +109,7 @@ const BudgetUtils = {
         return {
             theme: pick(s.theme, ['light', 'dark'], 'light'),
             currency: pick(s.currency, BudgetUtils.SUPPORTED_CURRENCIES, '₹'),
-            dateFormat: pick(s.dateFormat, BudgetUtils.DATE_FORMATS, 'DD/MM/YYYY'),
+            dateFormat: pick(s.dateFormat, BudgetUtils.DATE_FORMATS, 'D MMM YYYY'),
             monthlyBudget: Number.isFinite(s.monthlyBudget) && s.monthlyBudget >= 0 ? s.monthlyBudget : 0,
             alertThreshold: pick(s.alertThreshold, BudgetUtils.ALERT_THRESHOLDS, 80),
             budgetAlerts: typeof s.budgetAlerts === 'boolean' ? s.budgetAlerts : true,
@@ -160,14 +161,34 @@ const BudgetUtils = {
         return BudgetUtils.normalizeList(BudgetUtils.readStorage('goals'), BudgetUtils.normalizeGoal).items;
     },
 
+    // A stored YYYY-MM-DD date in the Date Format chosen on the Settings page
+    formatDate(value, format) {
+        const date = BudgetUtils.parseLocalDate(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        switch (format) {
+            case 'DD/MM/YYYY': return `${day}/${month}/${date.getFullYear()}`;
+            case 'MM/DD/YYYY': return `${month}/${day}/${date.getFullYear()}`;
+            case 'YYYY-MM-DD': return BudgetUtils.toLocalISODate(date);
+            default: return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+    },
+
+    // Whole calendar days from today to a YYYY-MM-DD date (negative when past)
+    daysUntil(value) {
+        const today = BudgetUtils.parseLocalDate(BudgetUtils.toLocalISODate(new Date()));
+        const msPerDay = 24 * 60 * 60 * 1000;
+        // Round: a span crossing a DST change is not a whole number of 24h days
+        return Math.round((BudgetUtils.parseLocalDate(value) - today) / msPerDay);
+    },
+
     // Markup for one row in a transactions list (dashboard and Transactions page)
-    transactionHTML(transaction, currency) {
+    transactionHTML(transaction, currency, dateFormat) {
         const icon = BudgetUtils.CATEGORY_ICONS[transaction.category] || '📦';
         const type = transaction.type === 'income' ? 'income' : 'expense';
         const sign = type === 'income' ? '+' : '-';
-        const formattedDate = BudgetUtils.parseLocalDate(transaction.date).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
+        const formattedDate = BudgetUtils.escapeHTML(BudgetUtils.formatDate(transaction.date, dateFormat));
 
         return `
             <div class="transaction-item ${type}">
@@ -269,6 +290,7 @@ class BudgetManager {
         this.transactions = BudgetUtils.loadTransactions();
         this.theme = BudgetUtils.readStorage('theme') === 'dark' ? 'dark' : 'light';
         this.currency = BudgetUtils.loadCurrency();
+        this.dateFormat = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).dateFormat;
 
         this.init();
     }
@@ -573,7 +595,7 @@ class BudgetManager {
             return;
         }
 
-        container.innerHTML = recent.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
+        container.innerHTML = recent.map(t => BudgetUtils.transactionHTML(t, this.currency, this.dateFormat)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {
@@ -641,6 +663,23 @@ class BudgetManager {
                     ? `🚨 Monthly budget exceeded: you've spent ${this.formatMoney(budget.spent)} of your ${this.formatMoney(budget.budget)} budget.`
                     : `⚠️ Monthly budget: you've spent ${this.formatMoney(budget.spent)} (${budget.percentage.toFixed(1)}%) of your ${this.formatMoney(budget.budget)} budget.`
             });
+        }
+
+        // Goal reminders: active goals due within a week, or overdue
+        if (settings.goalReminders) {
+            BudgetUtils.loadGoals()
+                .filter(g => !g.completed && BudgetUtils.daysUntil(g.deadline) <= 7)
+                .sort((a, b) => (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0))
+                .forEach(goal => {
+                    const days = BudgetUtils.daysUntil(goal.deadline);
+                    const count = Math.abs(days);
+                    const unit = count === 1 ? 'day' : 'days';
+                    const when = days === 0 ? 'is due today' : days > 0 ? `is due in ${count} ${unit}` : `is overdue by ${count} ${unit}`;
+                    insights.push({
+                        type: days < 0 ? 'danger' : 'warning',
+                        message: `⏰ Goal reminder: "${BudgetUtils.escapeHTML(goal.name)}" ${when}.`
+                    });
+                });
         }
 
         // Overspending warnings

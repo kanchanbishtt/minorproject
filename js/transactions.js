@@ -6,6 +6,7 @@ class TransactionsPage {
     constructor() {
         this.transactions = BudgetUtils.loadTransactions();
         this.currency = BudgetUtils.loadCurrency();
+        this.dateFormat = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).dateFormat;
         this.init();
     }
 
@@ -210,7 +211,7 @@ class TransactionsPage {
             return;
         }
 
-        container.innerHTML = filtered.map(t => BudgetUtils.transactionHTML(t, this.currency)).join('');
+        container.innerHTML = filtered.map(t => BudgetUtils.transactionHTML(t, this.currency, this.dateFormat)).join('');
 
         // Attach delete handlers
         container.querySelectorAll('.transaction-delete').forEach(btn => {

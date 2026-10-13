@@ -7,6 +7,7 @@ class GoalsPage {
         this.goals = BudgetUtils.loadGoals();
         this.transactions = BudgetUtils.loadTransactions();
         this.currency = BudgetUtils.loadCurrency();
+        this.dateFormat = BudgetUtils.normalizeSettings(BudgetUtils.readStorage('settings')).dateFormat;
         this.init();
     }
 
@@ -206,10 +207,7 @@ class GoalsPage {
     // Whole calendar days from today to the deadline, both as local dates, so the
     // time of day cannot turn the due date into "Overdue by 0 days"
     daysLeftText(deadline) {
-        const today = BudgetUtils.parseLocalDate(BudgetUtils.toLocalISODate(new Date()));
-        const msPerDay = 24 * 60 * 60 * 1000;
-        // Round: a span crossing a DST change is not a whole number of 24h days
-        const days = Math.round((BudgetUtils.parseLocalDate(deadline) - today) / msPerDay);
+        const days = BudgetUtils.daysUntil(deadline);
 
         if (days === 0) return 'Due today';
         const count = Math.abs(days);
@@ -227,9 +225,7 @@ class GoalsPage {
         const icon = categoryIcons[goal.category] || '📦';
         const percentage = goal.amount > 0 ? (saved / goal.amount) * 100 : 0;
         const remaining = Math.max(goal.amount - saved, 0);
-        const deadlineText = BudgetUtils.parseLocalDate(goal.deadline).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
+        const deadlineText = BudgetUtils.escapeHTML(BudgetUtils.formatDate(goal.deadline, this.dateFormat));
         const daysLeftText = this.daysLeftText(goal.deadline);
 
         return `
