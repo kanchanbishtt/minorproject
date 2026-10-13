@@ -437,6 +437,12 @@ body {
     overflow-y: auto;
 }
 
+/* Dashboard shows at most 5 recent items, so no inner scroll */
+.recent-transactions .transactions-list {
+    max-height: none;
+    overflow-y: visible;
+}
+
 .transaction-item {
     display: flex;
     justify-content: space-between;
