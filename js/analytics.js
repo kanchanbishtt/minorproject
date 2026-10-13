@@ -273,9 +273,22 @@ class AnalyticsPage {
             }
         });
 
-        const sortedMonths = Object.keys(monthlyData).sort();
-        const incomeData = sortedMonths.map(m => monthlyData[m].income);
-        const expenseData = sortedMonths.map(m => monthlyData[m].expense);
+        // Every month from the first to the last entry, so months without activity
+        // show as 0 instead of being skipped (which made Jan sit next to Sept)
+        const monthKeys = Object.keys(monthlyData).filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
+        const sortedMonths = [];
+        if (monthKeys.length > 0) {
+            const [firstYear, firstMonth] = monthKeys[0].split('-').map(Number);
+            const lastKey = monthKeys[monthKeys.length - 1];
+            for (let i = 0; ; i++) {
+                const date = new Date(firstYear, firstMonth - 1 + i, 1);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                sortedMonths.push(key);
+                if (key === lastKey) break;
+            }
+        }
+        const incomeData = sortedMonths.map(m => (monthlyData[m] ? monthlyData[m].income : 0));
+        const expenseData = sortedMonths.map(m => (monthlyData[m] ? monthlyData[m].expense : 0));
 
         if (this.monthlyTrendChartInstance) {
             this.monthlyTrendChartInstance.destroy();
@@ -294,14 +307,14 @@ class AnalyticsPage {
                         data: incomeData,
                         borderColor: '#26a69a',
                         backgroundColor: 'rgba(38, 166, 154, 0.1)',
-                        tension: 0.4
+                        cubicInterpolationMode: 'monotone'
                     },
                     {
                         label: 'Expense',
                         data: expenseData,
                         borderColor: '#ef5350',
                         backgroundColor: 'rgba(239, 83, 80, 0.1)',
-                        tension: 0.4
+                        cubicInterpolationMode: 'monotone'
                     }
                 ]
             },
