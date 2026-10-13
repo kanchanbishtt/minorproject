@@ -173,10 +173,14 @@ class TransactionsPage {
             filtered = filtered.filter(t => t.category === categoryFilter);
         }
 
-        // Apply sorting
+        // Apply sorting. Date sorts break ties by id (creation time) so
+        // same-day entries keep a stable order.
+        const byDate = (a, b) =>
+            (BudgetUtils.parseLocalDate(a.date) - BudgetUtils.parseLocalDate(b.date)) || (a.id - b.id);
+
         switch (sortFilter) {
             case 'oldest':
-                filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+                filtered.sort(byDate);
                 break;
             case 'highest':
                 filtered.sort((a, b) => b.amount - a.amount);
@@ -186,7 +190,7 @@ class TransactionsPage {
                 break;
             case 'newest':
             default:
-                filtered.sort((a, b) => b.id - a.id);
+                filtered.sort((a, b) => byDate(b, a));
         }
 
         // Render filtered results
