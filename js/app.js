@@ -88,6 +88,52 @@ const BudgetUtils = {
         return `"${text.replace(/"/g, '""')}"`;
     },
 
+    // Undo the formula guard added by toCSVCell
+    fromCSVCell(text) {
+        return /^'[=+\-@\t\r]/.test(text) ? text.slice(1) : text;
+    },
+
+    // RFC 4180 parser: quoted fields, "" escapes, commas/newlines inside quotes, CRLF, BOM
+    parseCSV(text) {
+        const rows = [];
+        let row = [];
+        let cell = '';
+        let inQuotes = false;
+        text = text.replace(/^﻿/, '');
+
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (inQuotes) {
+                if (ch === '"' && text[i + 1] === '"') {
+                    cell += '"';
+                    i++;
+                } else if (ch === '"') {
+                    inQuotes = false;
+                } else {
+                    cell += ch;
+                }
+            } else if (ch === '"') {
+                inQuotes = true;
+            } else if (ch === ',') {
+                row.push(cell);
+                cell = '';
+            } else if (ch === '\n' || ch === '\r') {
+                if (ch === '\r' && text[i + 1] === '\n') i++;
+                row.push(cell);
+                rows.push(row);
+                row = [];
+                cell = '';
+            } else {
+                cell += ch;
+            }
+        }
+        if (cell !== '' || row.length > 0) {
+            row.push(cell);
+            rows.push(row);
+        }
+        return rows;
+    },
+
     downloadFile(content, filename, mimeType) {
         const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
         const link = document.createElement('a');

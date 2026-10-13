@@ -232,26 +232,11 @@ class TransactionsPage {
             return;
         }
 
-        const headers = ['Date', 'Description', 'Type', 'Category', 'Amount'];
-        const rows = this.transactions.map(t => [
-            t.date,
-            t.description,
-            t.type,
-            t.category,
-            t.amount
-        ]);
-
-        let csvContent = headers.join(',') + '\n';
-        rows.forEach(row => {
-            csvContent += row.join(',') + '\n';
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
+        BudgetUtils.downloadFile(
+            BudgetUtils.transactionsToCSV(this.transactions),
+            `transactions-${BudgetUtils.toLocalISODate(new Date())}.csv`,
+            'text/csv;charset=utf-8'
+        );
 
         this.showNotification('CSV exported successfully!');
         document.getElementById('exportModal').classList.remove('active');

@@ -171,11 +171,10 @@ class SettingsPage {
         reader.onload = (e) => {
             try {
                 const content = e.target.result;
-                const lines = content.split('\n');
 
                 // Check if it's CSV
                 if (file.name.endsWith('.csv')) {
-                    this.importCSV(lines);
+                    this.importCSV(content);
                 } else if (file.name.endsWith('.json')) {
                     this.importJSON(content);
                 } else {
@@ -198,15 +197,13 @@ class SettingsPage {
         reader.readAsText(file);
     }
 
-    importCSV(lines) {
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    importCSV(content) {
+        // Row 0 is the export header: Date, Description, Type, Category, Amount
+        const rows = BudgetUtils.parseCSV(content);
         const transactions = [];
 
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-
-            const values = line.split(',').map(v => v.trim());
+        for (let i = 1; i < rows.length; i++) {
+            const values = rows[i].map(v => BudgetUtils.fromCSVCell(v.trim()));
 
             if (values.length >= 5) {
                 const transaction = {
