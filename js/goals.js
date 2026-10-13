@@ -6,10 +6,12 @@ class GoalsPage {
     constructor() {
         this.goals = this.loadFromStorage('goals') || [];
         this.transactions = this.loadFromStorage('transactions') || [];
+        this.currency = BudgetUtils.loadCurrency();
         this.init();
     }
 
     init() {
+        document.querySelector('label[for="goalAmount"]').textContent = `Target Amount (${this.currency})`;
         this.updateSummary();
         this.renderGoals();
         this.attachEventListeners();
@@ -60,10 +62,10 @@ class GoalsPage {
         const completedGoals = this.goals.filter(g => g.completed);
         const totalSaved = completedGoals.reduce((sum, g) => sum + g.amount, 0);
 
-        document.getElementById('currentBalance').textContent = `₹${currentBalance.toLocaleString('en-IN')}`;
+        document.getElementById('currentBalance').textContent = BudgetUtils.formatMoney(currentBalance, this.currency);
         document.getElementById('activeGoalsCount').textContent = activeGoals.length;
         document.getElementById('completedGoalsCount').textContent = completedGoals.length;
-        document.getElementById('totalSaved').textContent = `₹${totalSaved.toLocaleString('en-IN')}`;
+        document.getElementById('totalSaved').textContent = BudgetUtils.formatMoney(totalSaved, this.currency);
     }
 
     addGoal() {
@@ -237,15 +239,15 @@ class GoalsPage {
                     <div class="goal-stats">
                         <div class="goal-stat">
                             <p class="stat-label">Target</p>
-                            <p class="stat-value">₹${goal.amount.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(goal.amount, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Current</p>
-                            <p class="stat-value">₹${saved.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(saved, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Remaining</p>
-                            <p class="stat-value">₹${remaining.toLocaleString('en-IN')}</p>
+                            <p class="stat-value">${BudgetUtils.formatMoney(remaining, this.currency)}</p>
                         </div>
                         <div class="goal-stat">
                             <p class="stat-label">Progress</p>
