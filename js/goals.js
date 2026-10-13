@@ -12,6 +12,7 @@ class GoalsPage {
 
     init() {
         document.querySelector('label[for="goalAmount"]').textContent = `Target Amount (${this.currency})`;
+        this.setDeadlineMin();
         this.updateSummary();
         this.renderGoals();
         this.attachEventListeners();
@@ -31,6 +32,7 @@ class GoalsPage {
         document.getElementById('addGoalBtn').addEventListener('click', () => {
             const formContainer = document.getElementById('goalFormContainer');
             formContainer.style.display = 'block';
+            this.setDeadlineMin();
             // On narrow screens the form opens below the summary cards, off-screen
             formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             document.getElementById('goalName').focus({ preventScroll: true });
@@ -86,6 +88,11 @@ class GoalsPage {
 
         if (!Number.isFinite(amount) || amount <= 0) {
             alert('Please enter a target amount greater than 0');
+            return;
+        }
+
+        if (deadline < BudgetUtils.toLocalISODate(new Date())) {
+            alert('Please choose a target date from today onwards');
             return;
         }
 
@@ -188,6 +195,12 @@ class GoalsPage {
 
         // Attach event listeners
         this.attachGoalHandlers(container);
+    }
+
+    // Goals can only target today or later; refreshed whenever the form opens
+    // in case the page has stayed open past midnight
+    setDeadlineMin() {
+        document.getElementById('goalDeadline').min = BudgetUtils.toLocalISODate(new Date());
     }
 
     // Whole calendar days from today to the deadline, both as local dates, so the
