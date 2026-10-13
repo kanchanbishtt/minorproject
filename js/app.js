@@ -7,6 +7,7 @@ class BudgetManager {
     constructor() {
         this.transactions = this.loadFromStorage('transactions') || [];
         this.theme = this.loadFromStorage('theme') || 'light';
+        this.currency = this.loadCurrency();
 
         this.init();
     }
@@ -37,6 +38,20 @@ class BudgetManager {
     loadFromStorage(key) {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : null;
+    }
+
+    // ========== CURRENCY ==========
+    // Symbols offered by the currency select on settings.html
+    loadCurrency() {
+        const supported = ['₹', '$', '€', '£', '¥'];
+        const settings = this.loadFromStorage('settings') || {};
+        return supported.includes(settings.currency) ? settings.currency : '₹';
+    }
+
+    formatMoney(amount) {
+        const locale = this.currency === '₹' ? 'en-IN' : 'en-US';
+        const sign = amount < 0 ? '-' : '';
+        return `${sign}${this.currency}${Math.abs(amount).toLocaleString(locale)}`;
     }
 
     // ========== THEME ==========
@@ -81,6 +96,9 @@ class BudgetManager {
     setupDashboard() {
         // Only run on index.html (dashboard page)
         if (!document.getElementById('dashboard-section')) return;
+
+        const amountLabel = document.querySelector('label[for="amount"]');
+        if (amountLabel) amountLabel.textContent = `Amount (${this.currency})`;
 
         this.setDefaultDate();
         this.updateDashboard();
@@ -206,8 +224,9 @@ class BudgetManager {
 
     // jsPDF's built-in fonts cannot render ₹, so spell it out
     formatPDFAmount(amount) {
-        const sign = amount < 0 ? '-' : '';
-        return `${sign}Rs. ${Math.abs(amount).toLocaleString('en-IN')}`;
+        return this.currency === '₹'
+            ? this.formatMoney(amount).replace('₹', 'Rs. ')
+            : this.formatMoney(amount);
     }
 
     downloadFile(content, filename, mimeType) {
@@ -301,9 +320,9 @@ class BudgetManager {
         const expenseEl = document.getElementById('totalExpense');
         const balanceEl = document.getElementById('balance');
 
-        if (incomeEl) incomeEl.textContent = `₹${totals.income.toLocaleString('en-IN')}`;
-        if (expenseEl) expenseEl.textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
-        if (balanceEl) balanceEl.textContent = `₹${totals.balance.toLocaleString('en-IN')}`;
+        if (incomeEl) incomeEl.textContent = this.formatMoney(totals.income);
+        if (expenseEl) expenseEl.textContent = this.formatMoney(totals.expense);
+        if (balanceEl) balanceEl.textContent = this.formatMoney(totals.balance);
 
         // Update goal progress if element exists
         this.updateGoalProgress(totals.balance);
@@ -371,7 +390,7 @@ class BudgetManager {
                 </div>
                 <div class="transaction-right">
                     <div class="transaction-amount ${type}">
-                        ${sign}₹${transaction.amount.toLocaleString('en-IN')}
+                        ${sign}${this.formatMoney(transaction.amount)}
                     </div>
                     <button class="transaction-delete" data-id="${this.escapeHTML(transaction.id)}">🗑️ Delete</button>
                 </div>
@@ -452,7 +471,7 @@ class BudgetManager {
         if (totals.expense > totals.income) {
             insights.push({
                 type: 'danger',
-                message: `🚨 Alert: Your expenses (₹${totals.expense.toLocaleString('en-IN')}) exceed your income (₹${totals.income.toLocaleString('en-IN')})`
+                message: `🚨 Alert: Your expenses (${this.formatMoney(totals.expense)}) exceed your income (${this.formatMoney(totals.income)})`
             });
         }
 
