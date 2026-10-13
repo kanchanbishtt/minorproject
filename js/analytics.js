@@ -5,6 +5,7 @@
 class AnalyticsPage {
     constructor() {
         this.transactions = this.loadFromStorage('transactions') || [];
+        this.currency = BudgetUtils.loadCurrency();
         this.categoryChartInstance = null;
         this.incomeExpenseChartInstance = null;
         this.monthlyTrendChartInstance = null;
@@ -24,6 +25,20 @@ class AnalyticsPage {
     loadFromStorage(key) {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : null;
+    }
+
+    formatMoney(amount) {
+        return BudgetUtils.formatMoney(amount, this.currency);
+    }
+
+    // Chart.js tooltip options that show values as money. Line charts label each
+    // point by its dataset ("Income"), the others by the bar/slice label.
+    moneyTooltip(labelByDataset = false) {
+        return {
+            callbacks: {
+                label: ctx => `${labelByDataset ? ctx.dataset.label : ctx.label}: ${this.formatMoney(ctx.raw)}`
+            }
+        };
     }
 
     // Display name for a stored category key ("food" -> "Food"). Plain text:
@@ -77,14 +92,13 @@ class AnalyticsPage {
         const filtered = this.getFilteredTransactions();
         const totals = this.calculateTotals(filtered);
 
-        document.getElementById('totalIncome').textContent = `₹${totals.income.toLocaleString('en-IN')}`;
-        document.getElementById('totalExpense').textContent = `₹${totals.expense.toLocaleString('en-IN')}`;
+        document.getElementById('totalIncome').textContent = this.formatMoney(totals.income);
+        document.getElementById('totalExpense').textContent = this.formatMoney(totals.expense);
 
         // Calculate average daily spending
         const days = this.calculatePeriodDays(filtered);
         const avgDaily = days > 0 ? totals.expense / days : 0;
-        // Round as a number: toFixed() returns a string, which toLocaleString() leaves ungrouped
-        document.getElementById('avgDaily').textContent = `₹${Math.round(avgDaily).toLocaleString('en-IN')}`;
+        document.getElementById('avgDaily').textContent = this.formatMoney(Math.round(avgDaily));
 
         // Calculate savings rate
         const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
@@ -146,7 +160,7 @@ class AnalyticsPage {
             data: {
                 labels: ['Income', 'Expense', 'Balance'],
                 datasets: [{
-                    label: 'Amount (₹)',
+                    label: `Amount (${this.currency})`,
                     data: [totals.income, totals.expense, totals.balance],
                     backgroundColor: ['#26a69a', '#ef5350', '#42a5f5']
                 }]
@@ -155,7 +169,8 @@ class AnalyticsPage {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: this.moneyTooltip()
                 },
                 scales: {
                     y: { beginAtZero: true }
@@ -198,7 +213,8 @@ class AnalyticsPage {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom' },
+                    tooltip: this.moneyTooltip()
                 }
             }
         });
@@ -261,7 +277,8 @@ class AnalyticsPage {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: { position: 'top' },
+                    tooltip: this.moneyTooltip(true)
                 },
                 scales: {
                     y: { beginAtZero: true }
@@ -298,7 +315,7 @@ class AnalyticsPage {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Amount (₹)',
+                    label: `Amount (${this.currency})`,
                     data: data,
                     backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
                 }]
@@ -308,7 +325,8 @@ class AnalyticsPage {
                 maintainAspectRatio: true,
                 indexAxis: 'y',
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: this.moneyTooltip()
                 },
                 scales: {
                     x: { beginAtZero: true }
@@ -342,7 +360,7 @@ class AnalyticsPage {
                             </div>
                         </div>
                         <div class="transaction-right">
-                            <div class="transaction-amount expense">₹${amount.toLocaleString('en-IN')}</div>
+                            <div class="transaction-amount expense">${this.formatMoney(amount)}</div>
                         </div>
                     </div>
                 `;
@@ -397,7 +415,7 @@ class AnalyticsPage {
         if (totals.expense > totals.income) {
             insights.push({
                 type: 'danger',
-                message: `🚨 Alert: Your expenses (₹${totals.expense.toLocaleString('en-IN')}) exceed your income (₹${totals.income.toLocaleString('en-IN')})`
+                message: `🚨 Alert: Your expenses (${this.formatMoney(totals.expense)}) exceed your income (${this.formatMoney(totals.income)})`
             });
         }
 
