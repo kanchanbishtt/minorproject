@@ -49,6 +49,10 @@ const BudgetUtils = {
     DATE_FORMATS: ['D MMM YYYY', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'],
     ALERT_THRESHOLDS: [50, 75, 80, 90],
 
+    // Every localStorage key this app owns. Other apps on the same origin (e.g. other
+    // GitHub Pages projects under one username.github.io) keep theirs.
+    STORAGE_KEYS: ['transactions', 'goals', 'settings', 'theme'],
+
     // JSON from localStorage, or null if missing or unreadable
     readStorage(key) {
         try {

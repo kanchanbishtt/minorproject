@@ -257,7 +257,8 @@ class SettingsPage {
         const confirmation = prompt('⚠️ WARNING: This will permanently delete ALL your data!\n\nType "DELETE" to confirm:');
 
         if (confirmation === 'DELETE') {
-            localStorage.clear();
+            // Only this app's keys: localStorage.clear() would also wipe other apps on the same origin
+            BudgetUtils.STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
             BudgetUtils.flashToast('All data has been cleared.');
             window.location.reload();
         } else {
