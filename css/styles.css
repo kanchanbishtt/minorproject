@@ -648,13 +648,15 @@ body {
 
 /* ----- RESPONSIVE ----- */
 @media (max-width: 1024px) {
+    /* Top padding clears the fixed .mobile-toggle button */
     .main-content {
         margin-left: 0;
-        padding: 1.5rem;
+        padding: 5rem 1.5rem 1.5rem;
     }
 
     .sidebar {
         transform: translateX(-100%);
+        padding-top: 5rem;
     }
 
     .sidebar.mobile-open {
