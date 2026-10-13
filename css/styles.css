@@ -845,6 +845,14 @@ body {
     margin-bottom: 1rem;
 }
 
+/* In a narrow card auto-fit drops to one tall column; keep two per row.
+   Placed after the base rule so it wins at equal specificity. */
+@media (max-width: 768px) {
+    .goal-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .goal-stat {
     text-align: center;
 }
